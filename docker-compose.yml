@@ -4,6 +4,7 @@ services:
     build:
       context: .
       dockerfile: Dockerfile
+    env_file: ./.env
     command: /bin/sh -c "go run main.go"
     stdin_open: true
     tty: true

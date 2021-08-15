@@ -1,6 +1,7 @@
 package main
 
 import (
+	"os"
 	"fmt"
 	"github.com/gin-gonic/gin"
 	"github.com/MISW/birdol-server/controller"
@@ -24,7 +25,12 @@ func main() {
 	router.POST("/api/v1/test",controller.TestPost())
 	router.PUT("/api/v1/test/:id",controller.TestPut())
 	router.DELETE("/api/v1/test/:id",controller.TestDelete())
-	// For Development
+	mode := os.Getenv("MODE")
+	if mode=="production"{
+		fmt.Println("Running in Production mode.")
+	}else{
+		fmt.Println("Running in Development mode.")
+	}
 	router.Run(":80")
 }
 

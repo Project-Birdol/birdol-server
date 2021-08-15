@@ -1,9 +1,8 @@
-FROM golang:latest
+FROM golang:1.16
 
 RUN mkdir /app
 WORKDIR /app
 
-RUN go mod init github.com/MISW/birdol-server 
-RUN go get github.com/gin-gonic/gin
-RUN go get github.com/go-sql-driver/mysql
-RUN go get gorm.io/gorm
+COPY ./api/go.mod ./api/go.sum /app/ 
+RUN go mod tidy
+RUN go mod download
