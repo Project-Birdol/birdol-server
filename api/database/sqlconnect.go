@@ -2,9 +2,11 @@ package database
 
 import (
 	"fmt"
+	"os"
   	"time"
 	"gorm.io/gorm"
 	"gorm.io/driver/mysql"
+	"strings"
 )
 
 
@@ -13,9 +15,11 @@ func SqlConnect() (database *gorm.DB) {
 	USER := "go_test"
 	PASS := "password"
 	PROTOCOL := "tcp(db:3306)"
-	DBNAME := "go_database"
-  
-	CONNECT := USER + ":" + PASS + "@" + PROTOCOL + "/" + DBNAME + "?charset=utf8&parseTime=true&loc=Asia%2FTokyo"
+	DBNAME := "birdoldb"
+	CONNECT := USER + ":" + PASS + "@" + PROTOCOL + "/" + DBNAME + "?charset=utf8&parseTime=true"
+	if HEROKUDB := os.Getenv("JAWSDB_URL"); HEROKUDB != "" {
+		CONNECT = strings.TrimPrefix(HEROKUDB, "mysql://")
+    }
 	count := 0
 	db, err := gorm.Open(mysql.Open(CONNECT), &gorm.Config{})
 	if err != nil {
