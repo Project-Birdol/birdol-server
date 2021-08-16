@@ -1,5 +1,16 @@
 build:
   docker:
+<<<<<<< HEAD
     api: Dockerfile
 run:
   web: /bin/sh -c "go run main.go"
+=======
+    web: Dockerfile
+    worker:
+      dockerfile: Dockerfile
+      target: builder
+release:
+  image: worker
+run:
+  web: /main
+>>>>>>> main

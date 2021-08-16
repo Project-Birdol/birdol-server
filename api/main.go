@@ -26,12 +26,16 @@ func main() {
 	router.PUT("/api/v1/test/:id",controller.TestPut())
 	router.DELETE("/api/v1/test/:id",controller.TestDelete())
 	mode := os.Getenv("MODE")
+	PORT := ":80"
 	if mode=="production"{
 		fmt.Println("Running in Production mode.")
 	}else{
 		fmt.Println("Running in Development mode.")
 	}
-	router.Run(":80")
+	if os.Getenv("PORT")!=""{
+		PORT = ":"+os.Getenv("PORT")
+	}
+	router.Run(PORT)
 }
 
 
