@@ -1,9 +1,22 @@
-FROM golang:latest
+FROM golang:1.16-alpine as builder 
 
-RUN mkdir /app
+RUN apk update \
+  && apk add --no-cache git curl make gcc g++ 
+
 WORKDIR /app
 
-RUN go mod init github.com/MISW/birdol-server 
-RUN go get github.com/gin-gonic/gin
-RUN go get github.com/go-sql-driver/mysql
-RUN go get gorm.io/gorm
+COPY ./api .
+
+RUN go mod tidy
+RUN go mod download
+
+COPY . .
+
+RUN GOOS=linux GOARCH=amd64 go build -o /main
+
+FROM alpine:3.9
+
+COPY --from=builder /main .
+
+ENV PORT=${PORT}
+ENTRYPOINT ["/main"]

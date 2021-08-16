@@ -3,7 +3,9 @@ services:
   api:
     build:
       context: .
+      target: builder
       dockerfile: Dockerfile
+    env_file: ./.env
     command: /bin/sh -c "go run main.go"
     stdin_open: true
     tty: true
@@ -18,7 +20,7 @@ services:
     image: mysql:8.0
     environment:
       MYSQL_ROOT_PASSWORD: root
-      MYSQL_DATABASE: go_database
+      MYSQL_DATABASE: birdoldb
       MYSQL_USER: go_test
       MYSQL_PASSWORD: password
       TZ: 'Asia/Tokyo'
