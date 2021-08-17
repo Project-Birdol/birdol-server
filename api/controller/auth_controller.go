@@ -25,7 +25,10 @@ func HandleLogin() gin.HandlerFunc {
 		var json jsonmodel.AuthLoginRequest
 		if err := ctx.ShouldBindJSON(&json); err != nil {
 			log.Println(err)
-			ctx.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+			ctx.JSON(http.StatusBadRequest, gin.H{
+				"result": "failed",
+				"error":  "不適切なリクエストです。",
+			})
 			return
 		}
 
@@ -33,14 +36,20 @@ func HandleLogin() gin.HandlerFunc {
 		var u model.User
 		if err := sqldb.Where("email = ?", json.Email).Take(&u).Error; err != nil {
 			log.Println(err)
-			ctx.JSON(http.StatusUnauthorized, gin.H{"error": err.Error()})
+			ctx.JSON(http.StatusUnauthorized, gin.H{
+				"result": "failed",
+				"error":  "ログインに失敗しました。", //またはそのemailのユーザが存在しないことを示す。
+			})
 			return
 		}
 
 		//passwordが合っているかHash値を比較
 		if err := auth.CompareHashedString(u.Password, json.Password); err != nil {
 			log.Println(err)
-			ctx.JSON(http.StatusUnauthorized, gin.H{"error": err.Error()})
+			ctx.JSON(http.StatusUnauthorized, gin.H{
+				"result": "failed",
+				"error":  "ログインに失敗しました。",
+			})
 			return
 		}
 
@@ -48,7 +57,10 @@ func HandleLogin() gin.HandlerFunc {
 		token, err := auth.SetToken(sqldb, u.ID)
 		if err != nil {
 			log.Println(err)
-			ctx.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+			ctx.JSON(http.StatusInternalServerError, gin.H{
+				"result": "failed",
+				"error":  "サーバでエラーが生じました。",
+			})
 			return
 		}
 
@@ -75,21 +87,30 @@ func HandleLogout() gin.HandlerFunc {
 		var json jsonmodel.AuthLogoutRequest
 		if err := ctx.ShouldBindJSON(&json); err != nil {
 			log.Println(err)
-			ctx.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+			ctx.JSON(http.StatusBadRequest, gin.H{
+				"result": "failed",
+				"error":  "不適切なリクエストです。",
+			})
 			return
 		}
 
 		//access token が正しいか確認
 		if err := auth.CheckToken(sqldb, json.Auth.UserID, json.Auth.AccessToken); err != nil {
 			log.Println(err)
-			ctx.JSON(http.StatusUnauthorized, gin.H{"error": err.Error()})
+			ctx.JSON(http.StatusUnauthorized, gin.H{
+				"result": "failed",
+				"error":  "認証に失敗しました。",
+			})
 			return
 		}
 
 		//logoutリクエストのため、access tokenを削除する。
 		if err := auth.DeleteToken(sqldb, json.Auth.UserID); err != nil {
 			log.Println(err)
-			ctx.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+			ctx.JSON(http.StatusInternalServerError, gin.H{
+				"result": "failed",
+				"error":  "サーバでエラーが生じました。",
+			})
 			return
 		}
 
