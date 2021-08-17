@@ -29,9 +29,16 @@ func HandleLogin() gin.HandlerFunc {
 			return
 		}
 
-		//emailとpasswordが合っているかを確認
+		//emailが合っているかを確認。そのemailでdatabaseからデータ取得
 		var u model.User
-		if err := sqldb.Where("email = ? AND password = ?", json.Email, json.Password).Take(&u).Error; err != nil {
+		if err := sqldb.Where("email = ?", json.Email).Take(&u).Error; err != nil {
+			log.Println(err)
+			ctx.JSON(http.StatusUnauthorized, gin.H{"error": err.Error()})
+			return
+		}
+
+		//passwordが合っているかHash値を比較
+		if err := auth.CompareHashedString(u.Password, json.Password); err != nil {
 			log.Println(err)
 			ctx.JSON(http.StatusUnauthorized, gin.H{"error": err.Error()})
 			return

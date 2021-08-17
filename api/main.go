@@ -1,8 +1,8 @@
 package main
 
 import (
-	"os"
 	"fmt"
+	"os"
 
 	"github.com/MISW/birdol-server/controller"
 	"github.com/MISW/birdol-server/database"
@@ -26,22 +26,23 @@ func main() {
 
 	router := gin.Default()
 	//　ルーティングはここで設定する
-	router.GET("/api/v1/test",controller.TestGet())
-	router.POST("/api/v1/test",controller.TestPost())
-	router.PUT("/api/v1/test/:id",controller.TestPut())
-	router.DELETE("/api/v1/test/:id",controller.TestDelete())
-  
-	router.POST("/api/v1/auth", controller.HandleLogin())
+	router.GET("/api/v1/test", controller.TestGet())
+	router.POST("/api/v1/test", controller.TestPost())
+	router.PUT("/api/v1/test/:id", controller.TestPut())
+	router.DELETE("/api/v1/test/:id", controller.TestDelete())
+
+	router.PUT("/api/v1/user", controller.HandleSignUp())
+	router.POST("/api/v1/user", controller.HandleLogin())
 	router.DELETE("/api/v1/auth", controller.HandleLogout())
 	mode := os.Getenv("MODE")
 	PORT := ":80"
-	if mode=="production"{
+	if mode == "production" {
 		fmt.Println("Running in Production mode.")
-	}else{
+	} else {
 		fmt.Println("Running in Development mode.")
 	}
-	if os.Getenv("PORT")!=""{
-		PORT = ":"+os.Getenv("PORT")
+	if os.Getenv("PORT") != "" {
+		PORT = ":" + os.Getenv("PORT")
 	}
 	router.Run(PORT)
 }
