@@ -26,10 +26,6 @@ func main() {
 
 	router := gin.Default()
 	//　ルーティングはここで設定する
-	router.GET("/api/v1/test", controller.TestGet())
-	router.POST("/api/v1/test", controller.TestPost())
-	router.PUT("/api/v1/test/:id", controller.TestPut())
-	router.DELETE("/api/v1/test/:id", controller.TestDelete())
 
 	router.PUT("/api/v1/user", controller.HandleSignUp())
 	router.POST("/api/v1/user", controller.HandleLogin())
