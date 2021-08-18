@@ -2,6 +2,7 @@ package main
 
 import (
 	"fmt"
+	"log"
 	"os"
 
 	"github.com/MISW/birdol-server/controller"
@@ -16,10 +17,10 @@ func main() {
 	sqldb.AutoMigrate(&model.User{})
 	sqldb.AutoMigrate(&model.AccessToken{})
 	db, err := sqldb.DB()
-	defer db.Close()
 	if err != nil {
-		fmt.Println("Database Error:")
+		log.Fatal("Database error: ", err)
 	}
+	defer db.Close()
 
 	//アクセストークンの定期的な削除をする
 	//auth.StartDeleteExpiredTokens()
@@ -29,7 +30,7 @@ func main() {
 
 	router.PUT("/api/v1/user", controller.HandleSignUp())
 	router.POST("/api/v1/user", controller.HandleLogin())
-	router.DELETE("/api/v1/auth", controller.HandleLogout())
+	router.DELETE("/api/v1/user", controller.HandleLogout())
 	mode := os.Getenv("MODE")
 	PORT := ":80"
 	if mode == "production" {
