@@ -100,6 +100,8 @@ func HandleSignUp() gin.HandlerFunc {
 			return
 		}
 
+		// TODO: Generate SessionID
+
 		//ユーザ新規登録成功!
 		ctx.JSON(http.StatusOK, gin.H{
 			"result":       "success",

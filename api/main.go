@@ -12,11 +12,17 @@ import (
 )
 
 func main() {
-	// データベースのマイグレーション
+	/*
+		TODO: main.go内の処理を他ファイルに分離し整理
+	*/
+
+	// データベースのマイグレーション -> sqlconnect.go
 	sqldb := database.SqlConnect()
 	sqldb.AutoMigrate(&model.User{})
 	sqldb.AutoMigrate(&model.AccessToken{})
 	sqldb.AutoMigrate(&model.Session{})
+
+	// DB接続はCLoseせずオブジェクトを保持 -> sqlconnect.go
 	db, err := sqldb.DB()
 	if err != nil {
 		log.Fatal("Database error: ", err)
@@ -28,6 +34,7 @@ func main() {
 
 	mode := os.Getenv("MODE")
 
+	// ルーティング設定 -> server/server.go or server/router.go とかが多い
 	router := gin.Default()
 	/*	ルーティングはここで設定する
 		  v1: For development

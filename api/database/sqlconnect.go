@@ -8,7 +8,10 @@ import (
 	"os"
 )
 
-
+/*
+	TODO: Implement DB Connection Initialization
+		  To use connection pool
+*/
 
 func SqlConnect() (database *gorm.DB) {
 	USER := os.Getenv("DB_USER")
