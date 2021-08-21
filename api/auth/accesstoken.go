@@ -77,6 +77,7 @@ func CheckToken(sqldb *gorm.DB, userID uint, token string) error {
 	}
 
 	//tokenが一致しているかのチャック
+	// TODO: Confirm DeviceID
 	if storedToken.Token != token {
 		//log.Println(errors.New(fmt.Sprintf("mis-match token: userID(%d), token(%s), storedtoken(%s)", userID, token, storedToken.Token)))
 		return errors.New("token mismatch!")

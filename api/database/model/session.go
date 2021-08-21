@@ -3,7 +3,7 @@ package model
 import (
 	"time"
 
-	"gorm.io/gorm"
+	// "gorm.io/gorm"
 )
 
 // To disable soft delete
@@ -16,7 +16,7 @@ type Model struct {
 type Session struct {
 	Model
 	SessionID	string	`gorm:"unique;not null"`
-	DeviceID	string	`gorm:"unique;not null"`
+	AccessToken	string	`gorm:"unique;not null"`
 	UserID		uint	`gorm:"not null"`
-	Disconnect	bool
+	Expired		bool
 }

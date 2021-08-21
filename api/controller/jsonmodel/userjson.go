@@ -16,4 +16,5 @@ type SignupUserRequest struct {
 	Email    string `json:"email"`
 	Password string `json:"password"`
 	// TODO: Add DeviceID
+	DeviceID string `json:"device_id"`
 }

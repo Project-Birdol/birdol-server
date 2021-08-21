@@ -16,6 +16,7 @@ import (
 //e.g. RESPONSE: {"access_token":"WXgRCCTFhR8nY1MEKv5s1nXrRfCPUVza","result":"success","user_id":11}
 func HandleLogin() gin.HandlerFunc {
 	return func(ctx *gin.Context) {
+		log.SetPrefix("[HandleLogin]")
 		//datanase connection
 		sqldb := database.SqlConnect()
 		db, _ := sqldb.DB()
@@ -78,6 +79,7 @@ func HandleLogin() gin.HandlerFunc {
 //e.g. RESPONSE: {"result":"success"}
 func HandleLogout() gin.HandlerFunc {
 	return func(ctx *gin.Context) {
+		log.SetPrefix("[HandleLogout]")
 		//database connection
 		sqldb := database.SqlConnect()
 		db, _ := sqldb.DB()
@@ -129,3 +131,53 @@ func HandleLogout() gin.HandlerFunc {
 	また，複数端末の同時ログインの管理として，セッションIDの付与により同一アカウントに対して複数セッションが立つのを阻止
 	セッションIDはトークン認証時（アプリ起動時）に付与し，認証のたびに以前のものは無効化され，新規生成される
 */
+
+func TokenAuthorize() gin.HandlerFunc {
+	return func(ctx *gin.Context) {
+		log.SetPrefix("[TokenAuthorize]")
+		// Establish Database Connection (廃止予定)
+		db := database.SqlConnect()
+		sqldb, _ := db.DB()
+		defer sqldb.Close()
+
+		// Processing request
+		var request jsonmodel.Auth
+		if err := ctx.ShouldBindJSON(&request); err != nil {
+			log.Println(err)
+			ctx.JSON(http.StatusBadRequest, gin.H {
+				"result": "failed",
+				"error": "Invalid Request.",
+			})
+			return
+		}
+
+		user_id := request.UserID
+		access_token := request.AccessToken
+		device_id := request.DeviceID
+
+		if err := auth.CheckToken(db, user_id, access_token); err != nil {
+			log.Println(err)
+			// TODO: if token expired, Regenerate token
+			ctx.JSON(http.StatusInternalServerError, gin.H {
+				"result": "failed",
+				"error": "Invaild AccessToken.",
+			})
+			return
+		}
+
+		session_id, err := auth.CreateSession(db, device_id, access_token, user_id)
+		if err != nil {
+			log.Println(err)
+			ctx.JSON(http.StatusInternalServerError, gin.H {
+				"result": "failed",
+				"error": "Failed to create session.",
+			})
+			return
+		}
+
+		ctx.JSON(http.StatusOK, gin.H {
+			"result": "success",
+			"session_id": session_id,
+		})
+	}
+}

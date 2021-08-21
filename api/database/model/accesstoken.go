@@ -15,3 +15,11 @@ type AccessToken struct {
 	UpdatedAt		time.Time
 	DeletedAt		gorm.DeletedAt	`gorm:"index"`
 }
+
+type AccessToken2 struct {
+	gorm.Model
+	UserID			uint		`gorm:"not null"`
+	DeviceID		string		`gorm:"unique;not null"`
+	Token			string		`gorm:"not null"`
+	TokenUpdated	time.Time	`gorm:"not null"`
+}
