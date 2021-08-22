@@ -91,7 +91,7 @@ func HandleSignUp() gin.HandlerFunc {
 		}
 
 		//アクセストークンを生成
-		token, err := auth.SetToken(sqldb, 1)
+		token, err := auth.SetToken(sqldb, u.ID)
 		if err != nil {
 			ctx.JSON(http.StatusInternalServerError, gin.H{
 				"result": "failed",

@@ -47,6 +47,11 @@ func main() {
 			user.POST("", controller.HandleLogin())
 			user.DELETE("", controller.HandleLogout())
 		}
+
+		auth := v1.Group("/auth")
+		{
+			auth.POST("", controller.TokenAuthorize()) // Login using Token
+		}
 	}
 	
 	PORT := ":80"
