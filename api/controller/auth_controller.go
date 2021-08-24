@@ -33,6 +33,8 @@ func HandleLogin() gin.HandlerFunc {
 			return
 		}
 
+		/* TODO: JSONパラメータチェック */
+
 		//emailが合っているかを確認。そのemailでdatabaseからデータ取得
 		var u model.User
 		if err := sqldb.Where("email = ?", json.Email).Take(&u).Error; err != nil {
@@ -55,7 +57,7 @@ func HandleLogin() gin.HandlerFunc {
 		}
 
 		//access token の生成及び保存
-		token, err := auth.SetToken(sqldb, u.ID)
+		token, err := auth.SetToken(sqldb, u.ID, json.DeviceID)
 		if err != nil {
 			log.Println(err)
 			ctx.JSON(http.StatusInternalServerError, gin.H{
@@ -96,8 +98,14 @@ func HandleLogout() gin.HandlerFunc {
 			return
 		}
 
+		/* TODO: JSONパラメータチェック */
+
+		user_id := json.Auth.UserID
+		device_id := json.Auth.DeviceID
+		access_token := json.Auth.AccessToken
+
 		//access token が正しいか確認
-		if err := auth.CheckToken(sqldb, json.Auth.UserID, json.Auth.AccessToken); err != nil {
+		if err := auth.CheckToken(sqldb, user_id, device_id, access_token); err != nil {
 			log.Println(err)
 			ctx.JSON(http.StatusUnauthorized, gin.H{
 				"result": "failed",
@@ -123,18 +131,12 @@ func HandleLogout() gin.HandlerFunc {
 	}
 }
 
-// TODO: Create Authorization Handler (For Login by using Token)
 /* 
-	認証の構成としては，一番外枠にメアパス認証があり，一度メアパスを通したら有効期間内はトークン認証
-	メアパス認証時にはデバイスIDに固有のトークンを付与し，複数端末のログインを管理
-
-	また，複数端末の同時ログインの管理として，セッションIDの付与により同一アカウントに対して複数セッションが立つのを阻止
-	セッションIDはトークン認証時（アプリ起動時）に付与し，認証のたびに以前のものは無効化され，新規生成される
+  Token Authorization Handler
 */
-
 func TokenAuthorize() gin.HandlerFunc {
 	return func(ctx *gin.Context) {
-		log.SetPrefix("[TokenAuthorize]")
+		log.SetPrefix("[TokenAuthorize] ")
 		// Establish Database Connection (廃止予定)
 		db := database.SqlConnect()
 		sqldb, _ := db.DB()
@@ -151,13 +153,14 @@ func TokenAuthorize() gin.HandlerFunc {
 			return
 		}
 
+		/* TODO: JSONパラメータチェック */
+
 		user_id := request.UserID
 		access_token := request.AccessToken
 		device_id := request.DeviceID
 
-		if err := auth.CheckToken(db, user_id, access_token); err != nil {
+		if err := auth.CheckToken(db, user_id, device_id, access_token); err != nil {
 			log.Println(err)
-			// TODO: if token expired, Regenerate token
 			ctx.JSON(http.StatusInternalServerError, gin.H {
 				"result": "failed",
 				"error": "Invaild AccessToken.",

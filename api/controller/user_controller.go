@@ -28,6 +28,8 @@ func HandleSignUp() gin.HandlerFunc {
 			return
 		}
 
+		/* TODO: JSONパラメータチェック */
+
 		//request data に含まれるパスワードをハッシュ化する
 		if err := auth.HashString(&json.Password); err != nil {
 			ctx.JSON(http.StatusInternalServerError, gin.H{
@@ -91,7 +93,7 @@ func HandleSignUp() gin.HandlerFunc {
 		}
 
 		//アクセストークンを生成
-		token, err := auth.SetToken(sqldb, u.ID)
+		token, err := auth.SetToken(sqldb, u.ID, json.DeviceID)
 		if err != nil {
 			ctx.JSON(http.StatusInternalServerError, gin.H{
 				"result": "failed",

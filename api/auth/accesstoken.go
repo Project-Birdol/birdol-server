@@ -10,9 +10,8 @@ import (
 	"github.com/MISW/birdol-server/database"
 	"github.com/MISW/birdol-server/database/model"
 	"gorm.io/gorm"
+	"gorm.io/gorm/clause"
 )
-
-var tokenData map[string]tokenInf
 
 const (
 	tokenIDsize        = 32
@@ -21,14 +20,8 @@ const (
 	deleteExpiredTokenIntervalSeconds = 86400 //86400[s]=1[day]
 )
 
-//tokenInf is a information of token linked by "userID"
-type tokenInf struct {
-	TokenID string    `json:"token_id"` //token id
-	Updated time.Time `json:"updated"`  //last updated time
-}
-
 //SetToken creates(or update) and save new token, returns access token as string
-func SetToken(sqldb *gorm.DB, userID uint) (string, error) {
+func SetToken(sqldb *gorm.DB, userID uint, device_id string) (string, error) {
 
 	//create rondom token id
 	token, err := generateRandomString(tokenIDsize)
@@ -36,17 +29,22 @@ func SetToken(sqldb *gorm.DB, userID uint) (string, error) {
 		log.Println("failed to generate rondom string:", err)
 		return "", err
 	}
+	
+	new_token := model.AccessToken {
+		UserID: userID,
+		DeviceID: device_id,
+		Token: token,
+		TokenUpdated: time.Now(),
+	}
 
-	//databaseに保存。SoftDeletedなコラムを見つけるためにUnscopedが必要
-	if err := sqldb.Unscoped().Model(&model.AccessToken{}).Where("user_id = ?", userID).Updates(map[string]interface{}{"token": token, "token_updated": time.Now(), "deleted_at": gorm.Expr("NULL")}).Error; err != nil {
-		if err == gorm.ErrRecordNotFound {
-			if err := sqldb.Create(&model.AccessToken{UserID: userID, Token: token, TokenUpdated: time.Now()}).Error; err != nil {
-				return "", err
-			}
-			return token, nil
-		}
+	// Use "ON DUPLICATE KEY UPDATE"
+	if err := sqldb.Clauses(clause.OnConflict{
+		Columns: []clause.Column{{Name: "device_id"}},
+		DoUpdates: clause.Assignments(map[string]interface{}{"token": token, "token_updated": time.Now()}),
+	}).Create(&new_token).Error; err != nil {
 		return "", err
 	}
+
 	return token, nil
 }
 
@@ -69,33 +67,33 @@ func DeleteToken(sqldb *gorm.DB, userID uint) error {
 }
 
 //CheckToken checks if token is already stored in database: return error if not stored or already expired or mis-match token
-func CheckToken(sqldb *gorm.DB, userID uint, token string) error {
+func CheckToken(sqldb *gorm.DB, userID uint, device_id string, token string) error {
 	//dbからTokenが保存されているか否か
-	var storedToken model.AccessToken
-	if err := sqldb.Where("user_id = ?", userID).Select("user_id", "token", "token_updated").Take(&storedToken).Error; err != nil {
+	var storedTokens []model.AccessToken
+	if err := sqldb.Where("user_id = ?", userID).Find(&storedTokens).Error; err != nil {
+		return err
+	}
+	for i := 0; i < len(storedTokens); i++ {
+		if storedTokens[i].Token != token {
+			if i == len(storedTokens) - 1 { return errors.New("invalid token") }
+			continue
+		}
+		if storedTokens[i].DeviceID != device_id {
+			return errors.New("invalid device")
+		}
+		if err := checkTokenExpire(storedTokens[i].TokenUpdated); err != nil {
+			return err;
+		}
+		break
+	}
+
+	// 認証okの時にtokenの有効期限を伸ばす場合は、TokenUpdatedを現在時刻に変更する。
+	if err := sqldb.Model(&model.AccessToken{}).Where("user_id = ? AND device_id = ?", userID, device_id).Update("token_updated", time.Now()).Error; err != nil {
 		return err
 	}
 
-	//tokenが一致しているかのチャック
-	// TODO: Confirm DeviceID
-	if storedToken.Token != token {
-		//log.Println(errors.New(fmt.Sprintf("mis-match token: userID(%d), token(%s), storedtoken(%s)", userID, token, storedToken.Token)))
-		return errors.New("token mismatch!")
-	}
-
-	//tokenの有効期限が切れていないかのチェック
-	if err := checkTokenExpire(storedToken.TokenUpdated); err != nil {
-		return err
-	}
-
-	//認証okの時にtokenの有効期限を伸ばす場合は、TokenUpdatedを現在時刻に変更する。
-	if err := sqldb.Model(&model.AccessToken{}).Where("user_id=?", userID).Update("token_updated", time.Now()).Error; err != nil {
-		return err
-	}
-
-	log.Printf("right match token: userID(%d), tokenID(%s)\n", userID, token)
+	log.Printf("right match token: user_id(%d), device_id(%s), token(%s)\n", userID, device_id, token)
 	return nil
-
 }
 
 //checkTokenExpire checks if stored token is expired: if expired, return error
