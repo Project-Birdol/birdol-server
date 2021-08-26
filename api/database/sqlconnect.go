@@ -8,14 +8,17 @@ import (
 	"os"
 )
 
-
+/*
+	TODO: Implement DB Connection Initialization
+		  To use connection pool
+*/
 
 func SqlConnect() (database *gorm.DB) {
 	USER := os.Getenv("DB_USER")
 	PASS := os.Getenv("DB_PASSWORD")
 	DBNAME := os.Getenv("DB_NAME")
 	DBADRESS := os.Getenv("DB_ADDRESS")
-	PROTOCOL := "tcp("+DBADRESS+":3306)"
+	PROTOCOL := "tcp(" + DBADRESS + ":3306)"
 	CONNECT := USER + ":" + PASS + "@" + PROTOCOL + "/" + DBNAME + "?charset=utf8&parseTime=true"
 	count := 0
 	db, err := gorm.Open(mysql.Open(CONNECT), &gorm.Config{})

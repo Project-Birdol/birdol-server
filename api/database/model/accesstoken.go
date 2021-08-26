@@ -1,16 +1,11 @@
 package model
 
-import (
-	"time"
-
-	"gorm.io/gorm"
-)
+import "time"
 
 type AccessToken struct {
-	UserID       uint      `gorm:"primaryKey"`
-	Token        string    `gorm:"not null"`
-	TokenUpdated time.Time `gorm:"not null"`
-	CreatedAt    time.Time
-	UpdatedAt    time.Time
-	DeletedAt    gorm.DeletedAt `gorm:"index"`
+	Model
+	UserID			uint		`gorm:"not null"`
+	DeviceID		string		`gorm:"unique;not null"`
+	Token			string		`gorm:"not null"`
+	TokenUpdated	time.Time	`gorm:"not null"`
 }
