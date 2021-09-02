@@ -1,10 +1,11 @@
 package database
 
 import (
-	"fmt"
+	"log"
   	"time"
 	"gorm.io/gorm"
 	"gorm.io/driver/mysql"
+	"github.com/MISW/birdol-server/database/model"
 	"os"
 )
 
@@ -12,8 +13,23 @@ import (
 	TODO: Implement DB Connection Initialization
 		  To use connection pool
 */
+// データベースのマイグレーション -> sql.go
+// DB接続はCLoseせずオブジェクトを保持 -> sql.go
 
-func SqlConnect() (database *gorm.DB) {
+var Sqldb *gorm.DB
+
+func StartDB(){
+	SqlConnect()
+	MigrateDB()
+}
+
+func MigrateDB(){
+	Sqldb.AutoMigrate(&model.User{})
+	Sqldb.AutoMigrate(&model.AccessToken{})
+	Sqldb.AutoMigrate(&model.Session{})
+}
+
+func SqlConnect() {
 	USER := os.Getenv("DB_USER")
 	PASS := os.Getenv("DB_PASSWORD")
 	DBNAME := os.Getenv("DB_NAME")
@@ -24,23 +40,22 @@ func SqlConnect() (database *gorm.DB) {
 	db, err := gorm.Open(mysql.Open(CONNECT), &gorm.Config{})
 	if err != nil {
 	  for {
-		fmt.Print(err)
-		fmt.Print(CONNECT) 
+		log.Print(err)
+		log.Print(CONNECT) 
 		if err == nil {
-		  fmt.Println("")
+		  log.Println("")
 		  break
 		}
-		fmt.Print(".")
+		log.Print(".")
 		time.Sleep(time.Second)
 		count++
 		if count > 180 {
-		  fmt.Println("DB Connection Error")
+		log.Println("DB Connection Error")
 		  panic(err)
 		}
 		db, err = gorm.Open(mysql.Open(CONNECT), &gorm.Config{})
 	  }
 	}
-	fmt.Println("DB Connected")
-  
-	return db
+	log.Println("DB Connected")
+	Sqldb = db
 }

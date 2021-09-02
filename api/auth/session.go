@@ -4,14 +4,13 @@ import (
 	"crypto/sha256"
 	"encoding/hex"
 	"time"
-
+	"github.com/MISW/birdol-server/database"
 	"github.com/MISW/birdol-server/database/model"
-	"gorm.io/gorm"
 	"gorm.io/gorm/clause"
 )
 
-func CreateSession(db *gorm.DB, device_id string, access_token string, user_id uint) (string, error) {
-	db.Model(&model.Session{}).Where("user_id = ?", user_id).Update("expired", true)
+func CreateSession(device_id string, access_token string, user_id uint) (string, error) {
+	database.Sqldb.Model(&model.Session{}).Where("user_id = ?", user_id).Update("expired", true)
 	identifier := generateSessionIdentifier(device_id, access_token)
 
 	new_session := model.Session {
@@ -22,7 +21,7 @@ func CreateSession(db *gorm.DB, device_id string, access_token string, user_id u
 	}
 
 	// Use "ON DUPLICATE KEY UPDATE"
-	if err := db.Clauses(clause.OnConflict{
+	if err := database.Sqldb.Clauses(clause.OnConflict{
 		Columns: []clause.Column{{Name: "access_token"}},
 		DoUpdates: clause.Assignments(map[string]interface{}{"session_id": identifier, "expired": false}),
 	}).Create(&new_session).Error; err != nil {
@@ -32,9 +31,9 @@ func CreateSession(db *gorm.DB, device_id string, access_token string, user_id u
 	return identifier, nil
 }
 
-func CheckSession(db *gorm.DB, session_id string, access_token string) bool {
+func CheckSession(session_id string, access_token string) bool {
 	var session model.Session
-	if result := db.Model(&session).Where("session_id = ?", session_id); result.Error != nil {
+	if result := database.Sqldb.Model(&session).Where("session_id = ?", session_id); result.Error != nil {
 		return false
 	}
 	if session.AccessToken != access_token { return false }

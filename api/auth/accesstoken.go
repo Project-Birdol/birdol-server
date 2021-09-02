@@ -6,7 +6,6 @@ import (
 	"log"
 	"math/big"
 	"time"
-
 	"github.com/MISW/birdol-server/database"
 	"github.com/MISW/birdol-server/database/model"
 	"gorm.io/gorm"
@@ -21,7 +20,7 @@ const (
 )
 
 //SetToken creates(or update) and save new token, returns access token as string
-func SetToken(sqldb *gorm.DB, userID uint, device_id string) (string, error) {
+func SetToken(userID uint, device_id string) (string, error) {
 
 	//create rondom token id
 	token, err := generateRandomString(tokenIDsize)
@@ -38,7 +37,7 @@ func SetToken(sqldb *gorm.DB, userID uint, device_id string) (string, error) {
 	}
 
 	// Use "ON DUPLICATE KEY UPDATE"
-	if err := sqldb.Clauses(clause.OnConflict{
+	if err := database.Sqldb.Clauses(clause.OnConflict{
 		Columns: []clause.Column{{Name: "device_id"}},
 		DoUpdates: clause.Assignments(map[string]interface{}{"token": token, "token_updated": time.Now()}),
 	}).Create(&new_token).Error; err != nil {
@@ -49,17 +48,17 @@ func SetToken(sqldb *gorm.DB, userID uint, device_id string) (string, error) {
 }
 
 //DeleteToken delete stored access token
-func DeleteToken(sqldb *gorm.DB, userID uint) error {
+func DeleteToken(userID uint) error {
 
 	//dbからTokenが保存されているか否か
 	var c int64
-	sqldb.Model(&model.AccessToken{}).Where("user_id=?", userID).Count(&c)
+	database.Sqldb.Model(&model.AccessToken{}).Where("user_id=?", userID).Count(&c)
 	if c == 0 {
 		return gorm.ErrRecordNotFound
 	}
 
 	//delete
-	if err := sqldb.Where("user_id=?", userID).Delete(&model.AccessToken{}).Error; err != nil {
+	if err := database.Sqldb.Where("user_id=?", userID).Delete(&model.AccessToken{}).Error; err != nil {
 		return err
 	}
 
@@ -67,10 +66,10 @@ func DeleteToken(sqldb *gorm.DB, userID uint) error {
 }
 
 //CheckToken checks if token is already stored in database: return error if not stored or already expired or mis-match token
-func CheckToken(sqldb *gorm.DB, userID uint, device_id string, token string) error {
+func CheckToken(userID uint, device_id string, token string) error {
 	//dbからTokenが保存されているか否か
 	var storedTokens []model.AccessToken
-	if err := sqldb.Where("user_id = ?", userID).Find(&storedTokens).Error; err != nil {
+	if err := database.Sqldb.Where("user_id = ?", userID).Find(&storedTokens).Error; err != nil {
 		return err
 	}
 	for i := 0; i < len(storedTokens); i++ {
@@ -88,7 +87,7 @@ func CheckToken(sqldb *gorm.DB, userID uint, device_id string, token string) err
 	}
 
 	// 認証okの時にtokenの有効期限を伸ばす場合は、TokenUpdatedを現在時刻に変更する。
-	if err := sqldb.Model(&model.AccessToken{}).Where("user_id = ? AND device_id = ?", userID, device_id).Update("token_updated", time.Now()).Error; err != nil {
+	if err := database.Sqldb.Model(&model.AccessToken{}).Where("user_id = ? AND device_id = ?", userID, device_id).Update("token_updated", time.Now()).Error; err != nil {
 		return err
 	}
 
@@ -131,14 +130,10 @@ func StartDeleteExpiredTokens() {
 
 //deleteAllExpiredtokens delete all expired tokens in database
 func deleteAllExpiredtokens() {
-	sqldb := database.SqlConnect()
-	db, _ := sqldb.DB()
-	defer db.Close()
 
 	t := time.Now().Add(-1 * tokenExpireSeconds * time.Second)
-	if err := sqldb.Where("token_updated < ?", t).Delete(&model.AccessToken{}); err != nil {
+	if err := database.Sqldb.Where("token_updated < ?", t).Delete(&model.AccessToken{}); err != nil {
 		log.Println(err)
 	}
-
 	log.Println("Delete all expired access tokens...")
 }
