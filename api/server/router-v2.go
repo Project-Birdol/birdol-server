@@ -9,16 +9,16 @@ import (
 
 func GetRouterV2() *gin.Engine{
 	router := gin.Default()
-	v1 := router.Group("api/v2")
+	v2 := router.Group("api/v2")
 	{
-		user := v1.Group("/user")
+		user := v2.Group("/user")
 		{
 			user.PUT("", controller.HandleSignUp())
 			user.POST("", controller.HandleLogin())
 			user.DELETE("", controller.HandleLogout())
 		}
 
-		auth := v1.Group("/auth")
+		auth := v2.Group("/auth")
 		{
 			auth.POST("", controller.TokenAuthorize()) // Login using Token
 		}

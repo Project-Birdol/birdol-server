@@ -3,7 +3,6 @@ package controller
 import (
 	"log"
 	"net/http"
-
 	"github.com/MISW/birdol-server/auth"
 	"github.com/MISW/birdol-server/controller/jsonmodel"
 	"github.com/MISW/birdol-server/database"
@@ -114,6 +113,7 @@ func HandleLogout() gin.HandlerFunc {
 			})
 			return
 		}
+		database.Sqldb.Model(&model.Session{}).Where("access_token = ?", access_token).Update("expired", true)
 
 		//レスポンス
 		ctx.JSON(http.StatusOK, gin.H{
