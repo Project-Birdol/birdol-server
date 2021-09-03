@@ -22,8 +22,6 @@ func HandleSignUp() gin.HandlerFunc {
 			return
 		}
 
-		/* TODO: JSONパラメータチェック */
-
 		//request data に含まれるパスワードをハッシュ化する
 		if err := auth.HashString(&json.Password); err != nil {
 			ctx.JSON(http.StatusInternalServerError, gin.H{

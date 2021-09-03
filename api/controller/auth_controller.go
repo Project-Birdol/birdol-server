@@ -25,8 +25,6 @@ func HandleLogin() gin.HandlerFunc {
 			return
 		}
 
-		/* TODO: JSONパラメータチェック */
-
 		//emailが合っているかを確認。そのemailでdatabaseからデータ取得
 		var u model.User
 		if err := database.Sqldb.Where("email = ?", json.Email).Take(&u).Error; err != nil {
@@ -84,11 +82,10 @@ func HandleLogout() gin.HandlerFunc {
 			return
 		}
 
-		/* TODO: JSONパラメータチェック */
 
-		user_id := json.Auth.UserID
-		device_id := json.Auth.DeviceID
-		access_token := json.Auth.AccessToken
+		user_id := json.UserID
+		device_id := json.DeviceID
+		access_token := json.AccessToken
 
 		//access token が正しいか確認
 		if err := auth.CheckToken(user_id, device_id, access_token); err != nil {
@@ -101,7 +98,7 @@ func HandleLogout() gin.HandlerFunc {
 		}
 
 		//logoutリクエストのため、access tokenを削除する。
-		if err := auth.DeleteToken(json.Auth.UserID); err != nil {
+		if err := auth.DeleteToken(user_id); err != nil {
 			log.Println(err)
 			ctx.JSON(http.StatusInternalServerError, gin.H{
 				"result": "failed",

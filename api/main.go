@@ -9,16 +9,13 @@ import (
 )
 
 func main() {
-	/*
-		TODO: main.go内の処理を他ファイルに分離し整理
-	*/
 	database.StartDB()
 	// アクセストークンの定期的な削除をする
 	// auth.StartDeleteExpiredTokens()
 
 	mode := os.Getenv("MODE")
 
-	// ルーティング設定 -> server/server.go or server/router.go とかが多い
+	// ルーティング設定
 	var router *gin.Engine
 	version := os.Getenv("API_VERSION")
 	if version == "v1"{
