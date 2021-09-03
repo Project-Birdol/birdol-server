@@ -2,7 +2,6 @@ package controller
 
 import (
 	"net/http"
-
 	"github.com/MISW/birdol-server/auth"
 	"github.com/MISW/birdol-server/controller/jsonmodel"
 	"github.com/MISW/birdol-server/database"
@@ -13,11 +12,6 @@ import (
 //新規ユーザ登録
 func HandleSignUp() gin.HandlerFunc {
 	return func(ctx *gin.Context) {
-		//database
-		sqldb := database.SqlConnect()
-		db, _ := sqldb.DB()
-		defer db.Close()
-
 		//request data のjsonをstructにする
 		var json jsonmodel.SignupUserRequest
 		if err := ctx.ShouldBindJSON(&json); err != nil {
@@ -41,7 +35,7 @@ func HandleSignUp() gin.HandlerFunc {
 
 		//登録しようとするユーザが既にいないか確認 (name)
 		var c_name int64
-		if err := sqldb.Model(&model.User{}).Where("name = ?", json.Name).Select("id").Count(&c_name).Error; err != nil {
+		if err := database.Sqldb.Model(&model.User{}).Where("name = ?", json.Name).Select("id").Count(&c_name).Error; err != nil {
 			ctx.JSON(http.StatusInternalServerError, gin.H{
 				"result": "failed",
 				"error":  "ユーザの新規作成に失敗しました",
@@ -58,7 +52,7 @@ func HandleSignUp() gin.HandlerFunc {
 
 		//登録しようとするユーザが既にいないか確認 (email)
 		var c_email int64
-		if err := sqldb.Model(&model.User{}).Where("email = ?", json.Email).Select("id").Count(&c_email).Error; err != nil {
+		if err := database.Sqldb.Model(&model.User{}).Where("email = ?", json.Email).Select("id").Count(&c_email).Error; err != nil {
 			ctx.JSON(http.StatusInternalServerError, gin.H{
 				"result": "failed",
 				"error":  "ユーザの新規作成に失敗しました",
@@ -74,7 +68,7 @@ func HandleSignUp() gin.HandlerFunc {
 		}
 
 		//ユーザ新規作成。保存
-		if err := sqldb.Create(&model.User{Name: json.Name, Email: json.Email, Password: json.Password}).Error; err != nil {
+		if err := database.Sqldb.Create(&model.User{Name: json.Name, Email: json.Email, Password: json.Password}).Error; err != nil {
 			ctx.JSON(http.StatusInternalServerError, gin.H{
 				"result": "failed",
 				"error":  "ユーザの新規作成に失敗しました",
@@ -84,7 +78,7 @@ func HandleSignUp() gin.HandlerFunc {
 
 		//新規作成したユーザのIDを取得
 		var u model.User
-		if err := sqldb.Where("name = ? AND email = ?", json.Name, json.Email).Select("id").Take(&u).Error; err != nil {
+		if err := database.Sqldb.Where("name = ? AND email = ?", json.Name, json.Email).Select("id").Take(&u).Error; err != nil {
 			ctx.JSON(http.StatusInternalServerError, gin.H{
 				"result": "failed",
 				"error":  "ユーザの新規作成に失敗しました",
@@ -93,7 +87,7 @@ func HandleSignUp() gin.HandlerFunc {
 		}
 
 		//アクセストークンを生成
-		token, err := auth.SetToken(sqldb, u.ID, json.DeviceID)
+		token, err := auth.SetToken(u.ID, json.DeviceID)
 		if err != nil {
 			ctx.JSON(http.StatusInternalServerError, gin.H{
 				"result": "failed",
