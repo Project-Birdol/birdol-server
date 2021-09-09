@@ -10,9 +10,7 @@ import (
 	"github.com/gin-gonic/gin"
 )
 
-//HandleLogin Login: emailとpasswordで認証後にaccess tokenを発行する
-//e.g. REQUEST: curl -X POST --data '{"email":"test@test","password":"test"}'  -H "Content-Type: application/json" http://localhost:80/api/v1/auth
-//e.g. RESPONSE: {"access_token":"WXgRCCTFhR8nY1MEKv5s1nXrRfCPUVza","result":"success","user_id":11}
+// HandleLogin Login: emailとpasswordで認証後にaccess tokenを発行する
 func HandleLogin() gin.HandlerFunc {
 	return func(ctx *gin.Context) {
 		log.SetPrefix("[HandleLogin]")
@@ -26,8 +24,6 @@ func HandleLogin() gin.HandlerFunc {
 			})
 			return
 		}
-
-		/* TODO: JSONパラメータチェック */
 
 		//emailが合っているかを確認。そのemailでdatabaseからデータ取得
 		var u model.User
@@ -70,9 +66,7 @@ func HandleLogin() gin.HandlerFunc {
 	}
 }
 
-//HandleLogout Logout: user_idとaccess_tokenで認証した後にaccess_tokenを削除する。
-//e.g. REQUEST: curl -X DELETE --data '{"auth":{"user_id":11,"access_token":"USACD7zX3IgiYnp4u9bSNtPOr92Pyj9N"}}' -H "Content-Type: application/json" http://localhost:80/api/v1/auth
-//e.g. RESPONSE: {"result":"success"}
+// HandleLogout Logout: user_idとaccess_tokenで認証した後にaccess_tokenを削除する。
 func HandleLogout() gin.HandlerFunc {
 	return func(ctx *gin.Context) {
 		log.SetPrefix("[HandleLogout]")
@@ -88,11 +82,10 @@ func HandleLogout() gin.HandlerFunc {
 			return
 		}
 
-		/* TODO: JSONパラメータチェック */
 
-		user_id := json.Auth.UserID
-		device_id := json.Auth.DeviceID
-		access_token := json.Auth.AccessToken
+		user_id := json.UserID
+		device_id := json.DeviceID
+		access_token := json.AccessToken
 
 		//access token が正しいか確認
 		if err := auth.CheckToken(user_id, device_id, access_token); err != nil {
@@ -105,7 +98,7 @@ func HandleLogout() gin.HandlerFunc {
 		}
 
 		//logoutリクエストのため、access tokenを削除する。
-		if err := auth.DeleteToken(json.Auth.UserID); err != nil {
+		if err := auth.DeleteToken(user_id); err != nil {
 			log.Println(err)
 			ctx.JSON(http.StatusInternalServerError, gin.H{
 				"result": "failed",

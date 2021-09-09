@@ -14,15 +14,15 @@ import (
 
 const (
 	tokenIDsize        = 32
-	tokenExpireSeconds = 604800 //604800[s]=1[week], int64
+	tokenExpireSeconds = 604800 // 604800[s]=1[week], int64
 
-	deleteExpiredTokenIntervalSeconds = 86400 //86400[s]=1[day]
+	deleteExpiredTokenIntervalSeconds = 86400 // 86400[s]=1[day]
 )
 
-//SetToken creates(or update) and save new token, returns access token as string
+// SetToken creates(or update) and save new token, returns access token as string
 func SetToken(userID uint, device_id string) (string, error) {
 
-	//create rondom token id
+	// create rondom token id
 	token, err := generateRandomString(tokenIDsize)
 	if err != nil {
 		log.Println("failed to generate rondom string:", err)
@@ -47,17 +47,17 @@ func SetToken(userID uint, device_id string) (string, error) {
 	return token, nil
 }
 
-//DeleteToken delete stored access token
+// DeleteToken delete stored access token
 func DeleteToken(userID uint) error {
 
-	//dbからTokenが保存されているか否か
+	// dbからTokenが保存されているか否か
 	var c int64
 	database.Sqldb.Model(&model.AccessToken{}).Where("user_id=?", userID).Count(&c)
 	if c == 0 {
 		return gorm.ErrRecordNotFound
 	}
 
-	//delete
+	// delete
 	if err := database.Sqldb.Where("user_id=?", userID).Delete(&model.AccessToken{}).Error; err != nil {
 		return err
 	}
@@ -65,12 +65,13 @@ func DeleteToken(userID uint) error {
 	return nil
 }
 
-//CheckToken checks if token is already stored in database: return error if not stored or already expired or mis-match token
+// CheckToken checks if token is already stored in database: return error if not stored or already expired or mis-match token
 func CheckToken(userID uint, device_id string, token string) error {
-	//dbからTokenが保存されているか否か
+	// dbからTokenが保存されているか否か
 	var storedTokens []model.AccessToken
-	if err := database.Sqldb.Where("user_id = ?", userID).Find(&storedTokens).Error; err != nil {
-		return err
+	database.Sqldb.Where("user_id = ?", userID).Find(&storedTokens)
+	if len(storedTokens) == 0 {
+		return errors.New("tokens not found")
 	}
 	for i := 0; i < len(storedTokens); i++ {
 		if storedTokens[i].Token != token {
@@ -95,7 +96,7 @@ func CheckToken(userID uint, device_id string, token string) error {
 	return nil
 }
 
-//checkTokenExpire checks if stored token is expired: if expired, return error
+// checkTokenExpire checks if stored token is expired: if expired, return error
 func checkTokenExpire(updated time.Time) error {
 	if time.Since(updated).Seconds() > tokenExpireSeconds {
 		return errors.New("token has expired")
@@ -118,7 +119,7 @@ func generateRandomString(size int) (string, error) {
 	return string(r), nil
 }
 
-//StartDeleteExpiredTokens delete tokens if they are expired
+// StartDeleteExpiredTokens delete tokens if they are expired
 func StartDeleteExpiredTokens() {
 	go func() {
 		for {
@@ -128,7 +129,7 @@ func StartDeleteExpiredTokens() {
 	}()
 }
 
-//deleteAllExpiredtokens delete all expired tokens in database
+// deleteAllExpiredtokens delete all expired tokens in database
 func deleteAllExpiredtokens() {
 
 	t := time.Now().Add(-1 * tokenExpireSeconds * time.Second)
