@@ -22,12 +22,13 @@ func GetRouterV1() *gin.Engine{
 		{
 			auth.POST("", controller.TokenAuthorize()) // Login using Token
 		}
-		progress := v1.Group("/progress")
+		progress := v1.Group("/progress/:userid")
 		{
-			progress.GET("/gallary/:userid",controller.GetGallaryInfo())
-			progress.GET("/completed/:userid",controller.GetCompletedCharacters())
-			progress.GET("/current/:userid",controller.GetCurrentProgress())
-			progress.PUT("/update/:userid",controller.CreateOrUpdateProgress())
+			progress.GET("/gallary",controller.GetGallaryInfo())
+			progress.PUT("/complete",controller.FinishProgress())
+			progress.GET("/complete",controller.GetCompletedCharacters())
+			progress.GET("",controller.GetCurrentProgress())
+			progress.PUT("",controller.CreateOrUpdateProgress())
 		}
 	}
 	return router

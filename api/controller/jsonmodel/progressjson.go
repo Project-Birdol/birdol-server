@@ -3,7 +3,7 @@ package jsonmodel
 import "github.com/MISW/birdol-server/database/model"
 
 type GallaryChild struct {
-	CharacterId int `json:"id" binding:"required"`
+	MainCharacterId int `json:"id" binding:"required"`
 }
 
 type GallaryResponse struct {
@@ -18,5 +18,5 @@ type StoryResponse struct{
 
 type DendouResponse struct{
 	Result string `json:"result"`
-	Pairs []model.CharacterProgress `json:"pairs"` 
+	Characters []model.CompletedProgress `json:"characters"` 
 }

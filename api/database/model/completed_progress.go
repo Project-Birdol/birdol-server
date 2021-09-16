@@ -1,9 +1,9 @@
 package model
 
-type CharacterProgress struct
+type CompletedProgress struct
 {
 	Model 
-    StoryProgressId int `json:"-"`
+    UserId uint `json:"-"`
 	//メインキャラクター
 	MainCharacterId int	`json:"main_character_id"`
 	Name string `json:"name"`
@@ -19,4 +19,3 @@ type CharacterProgress struct
 	PassiveSkillType uint	`json:"passive_skill_type"`
 	PassiveSkillScore float32	`json:"passive_skill_score"`
 }
-
