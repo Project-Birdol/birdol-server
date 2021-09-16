@@ -2,13 +2,13 @@ package jsonmodel
 
 import "github.com/MISW/birdol-server/database/model"
 
-type ProgressRequest struct {
-	Characters []Character `json:"characters" binding:"dive"`
-	Teachers []Teacher `json:"teachers"`
+type GallaryChild struct {
+	CharacterId int `json:"id" binding:"required"`
 }
 
 type GallaryResponse struct {
-	CharacterId int `json:"id" binding:"required"`
+	Result string `json:"result"`
+	Birdols []GallaryChild `json:"birdols"` 
 }
 
 type StoryResponse struct{
@@ -18,5 +18,5 @@ type StoryResponse struct{
 
 type DendouResponse struct{
 	Result string `json:"result"`
-	Pairs model.CharacterProgress `json:"pairs"` 
+	Pairs []model.CharacterProgress `json:"pairs"` 
 }

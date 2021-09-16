@@ -24,18 +24,10 @@ func GetRouterV1() *gin.Engine{
 		}
 		progress := v1.Group("/progress")
 		{
-			story := progress.Group("/story")
-			{
-				story.PUT("/update/:userid",controller.UpdateStory())
-			}
-			characters := progress.Group("/characters")
-			{
-				characters.GET("/gallary/:userid",controller.GetGallaryInfo())
-				characters.GET("/completed/:userid",controller.GetCompletedCharacters())
-				characters.PUT("/update/:userid",controller.UpdateCharacters())
-			}
+			progress.GET("/gallary/:userid",controller.GetGallaryInfo())
+			progress.GET("/completed/:userid",controller.GetCompletedCharacters())
 			progress.GET("/current/:userid",controller.GetCurrentProgress())
-			progress.PUT("/new/:userid",controller.NewProgress())
+			progress.PUT("/update/:userid",controller.CreateOrUpdateProgress())
 		}
 	}
 	return router
