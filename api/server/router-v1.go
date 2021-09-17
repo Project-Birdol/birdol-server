@@ -22,6 +22,14 @@ func GetRouterV1() *gin.Engine{
 		{
 			auth.POST("", controller.TokenAuthorize()) // Login using Token
 		}
+		progress := v1.Group("/progress/:userid")
+		{
+			progress.GET("/gallery",controller.GetGalleryInfo())
+			progress.PUT("/complete",controller.FinishProgress())
+			progress.GET("/complete",controller.GetCompletedCharacters())
+			progress.GET("",controller.GetCurrentProgress())
+			progress.PUT("",controller.CreateOrUpdateProgress())
+		}
 	}
 	return router
 }
