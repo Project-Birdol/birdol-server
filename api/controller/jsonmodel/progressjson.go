@@ -2,13 +2,13 @@ package jsonmodel
 
 import "github.com/MISW/birdol-server/database/model"
 
-type GallaryChild struct {
+type GalleryChild struct {
 	MainCharacterId int `json:"id" binding:"required"`
 }
 
-type GallaryResponse struct {
+type GalleryResponse struct {
 	Result string `json:"result"`
-	Birdols []GallaryChild `json:"birdols"` 
+	Birdols []GalleryChild `json:"birdols"` 
 }
 
 type StoryResponse struct{

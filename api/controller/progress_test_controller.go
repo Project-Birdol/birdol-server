@@ -34,7 +34,7 @@ func GetCurrentProgress() gin.HandlerFunc {
 func GetGalleryInfo() gin.HandlerFunc {
 	return func(ctx *gin.Context) {
 		userid := ctx.Param("userid")
-		var ids []jsonmodel.GallaryChild
+		var ids []jsonmodel.GalleryChild
 		if err := database.Sqldb.Model(&model.CompletedProgress{}).Select("main_character_id").Where("user_id = ?", userid).Group("main_character_id").Order("main_character_id").Find(&ids).Error; err != nil {
 			log.Println(err)
 			ctx.JSON(http.StatusBadRequest, gin.H{
@@ -43,7 +43,7 @@ func GetGalleryInfo() gin.HandlerFunc {
 			})
 			return
 		}
-		response := new(jsonmodel.GallaryResponse)
+		response := new(jsonmodel.GalleryResponse)
 		response.Result = "success"
 		response.Birdols = ids
 		ctx.JSON(http.StatusOK, response)
