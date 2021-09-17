@@ -109,7 +109,14 @@ func FinishProgress() gin.HandlerFunc {
 			})
 			return
 		}
-		database.Sqldb.Model(&user).Association("CompletedProgresses").Append(&characters) //これをエラーハンドリングしたらnilが出てきたけどもしかしたらgormのバグ?
+		if err := database.Sqldb.Model(&user).Association("CompletedProgresses").Append(&characters); err != nil {
+			log.Println(err)
+			ctx.JSON(http.StatusInternalServerError, gin.H{
+				"result": "failed",
+				"error":  "データの保存に失敗しました",
+			})
+			return
+		}
 		ctx.JSON(http.StatusOK, gin.H {
 			"result": "success",
 			"session_id": "ok",
@@ -141,7 +148,7 @@ func CreateOrUpdateProgress() gin.HandlerFunc {
 		var err error
 		if story.ID != 0{
 			var laststory model.StoryProgress
-			database.Sqldb.Where("user_id = ? && completed = ?", userid, false).Last(&newstory)
+			database.Sqldb.Where("user_id = ? && completed = ?", userid, false).Last(&laststory)
 			if laststory.ID != story.ID{
 				err = errors.New("Invalid request")
 			}else{
