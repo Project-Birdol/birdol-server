@@ -31,7 +31,7 @@ func GetCurrentProgress() gin.HandlerFunc {
 	}
 }
 
-func GetGallaryInfo() gin.HandlerFunc {
+func GetGalleryInfo() gin.HandlerFunc {
 	return func(ctx *gin.Context) {
 		userid := ctx.Param("userid")
 		var ids []jsonmodel.GallaryChild

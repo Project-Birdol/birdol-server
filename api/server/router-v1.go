@@ -24,7 +24,7 @@ func GetRouterV1() *gin.Engine{
 		}
 		progress := v1.Group("/progress/:userid")
 		{
-			progress.GET("/gallary",controller.GetGallaryInfo())
+			progress.GET("/gallery",controller.GetGalleryInfo())
 			progress.PUT("/complete",controller.FinishProgress())
 			progress.GET("/complete",controller.GetCompletedCharacters())
 			progress.GET("",controller.GetCurrentProgress())
