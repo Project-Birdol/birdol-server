@@ -176,7 +176,7 @@ func CreateOrUpdateProgress() gin.HandlerFunc {
 		}
 		ctx.JSON(http.StatusOK, gin.H {
 			"result": "success",
-			"session_id": "ok",
+			"progress_id": story.ID,
 		})
 	}
 }
