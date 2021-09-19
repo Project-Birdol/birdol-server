@@ -26,15 +26,6 @@ func LoginAccount() gin.HandlerFunc {
 			return
 		}
 
-		//account_idかpasswordが空の場合、ログイン失敗
-		if json.AccountID == "" || json.Password == "" {
-			ctx.JSON(http.StatusUnauthorized, gin.H{
-				"result": "failed",
-				"error":  "データ連携に失敗しました。",
-			})
-			return
-		}
-
 		//account_idが合っているかを確認。そのaccount_idでdatabaseからデータ取得
 		var u model.User
 		if err := database.Sqldb.Where("account_id = ?", json.AccountID).Take(&u).Error; err != nil {
