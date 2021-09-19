@@ -4,6 +4,7 @@ import (
 	"log"
   	"time"
 	"gorm.io/gorm"
+	"gorm.io/gorm/logger"
 	"gorm.io/driver/mysql"
 	"github.com/MISW/birdol-server/database/model"
 	"os"
@@ -27,6 +28,10 @@ func MigrateDB(){
 	Sqldb.AutoMigrate(&model.User{})
 	Sqldb.AutoMigrate(&model.AccessToken{})
 	Sqldb.AutoMigrate(&model.Session{})
+	Sqldb.AutoMigrate(&model.StoryProgress{})
+	Sqldb.AutoMigrate(&model.CharacterProgress{})
+	Sqldb.AutoMigrate(&model.Teacher{})
+	Sqldb.AutoMigrate(&model.CompletedProgress{})
 }
 
 func SqlConnect() {
@@ -37,7 +42,9 @@ func SqlConnect() {
 	PROTOCOL := "tcp(" + DBADRESS + ":3306)"
 	CONNECT := USER + ":" + PASS + "@" + PROTOCOL + "/" + DBNAME + "?charset=utf8&parseTime=true"
 	count := 0
-	db, err := gorm.Open(mysql.Open(CONNECT), &gorm.Config{})
+	db, err := gorm.Open(mysql.Open(CONNECT), &gorm.Config{
+		Logger: logger.Default.LogMode(logger.Info),
+	})
 	if err != nil {
 	  for {
 		log.Print(err)
@@ -53,7 +60,9 @@ func SqlConnect() {
 		log.Println("DB Connection Error")
 		  panic(err)
 		}
-		db, err = gorm.Open(mysql.Open(CONNECT), &gorm.Config{})
+		db, err = gorm.Open(mysql.Open(CONNECT), &gorm.Config{
+			Logger: logger.Default.LogMode(logger.Info),
+		})
 	  }
 	}
 	log.Println("DB Connected")
