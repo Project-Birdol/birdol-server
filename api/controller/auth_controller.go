@@ -3,6 +3,7 @@ package controller
 import (
 	"log"
 	"net/http"
+
 	"github.com/MISW/birdol-server/auth"
 	"github.com/MISW/birdol-server/controller/jsonmodel"
 	"github.com/MISW/birdol-server/database"
@@ -10,8 +11,8 @@ import (
 	"github.com/gin-gonic/gin"
 )
 
-// HandleLogin Login: emailとpasswordで認証後にaccess tokenを発行する
-func HandleLogin() gin.HandlerFunc {
+// LoginAccount Login: account_idとpasswordで認証後にaccess tokenを発行する。 ゲーム内でのアカウント連携
+func LoginAccount() gin.HandlerFunc {
 	return func(ctx *gin.Context) {
 		log.SetPrefix("[HandleLogin]")
 		//request data の jsonを変換
@@ -25,13 +26,22 @@ func HandleLogin() gin.HandlerFunc {
 			return
 		}
 
-		//emailが合っているかを確認。そのemailでdatabaseからデータ取得
+		//account_idかpasswordが空の場合、ログイン失敗
+		if json.AccountID == "" || json.Password == "" {
+			ctx.JSON(http.StatusUnauthorized, gin.H{
+				"result": "failed",
+				"error":  "データ連携に失敗しました。",
+			})
+			return
+		}
+
+		//account_idが合っているかを確認。そのaccount_idでdatabaseからデータ取得
 		var u model.User
-		if err := database.Sqldb.Where("email = ?", json.Email).Take(&u).Error; err != nil {
+		if err := database.Sqldb.Where("account_id = ?", json.AccountID).Take(&u).Error; err != nil {
 			log.Println(err)
 			ctx.JSON(http.StatusUnauthorized, gin.H{
 				"result": "failed",
-				"error":  "ログインに失敗しました。", //またはそのemailのユーザが存在しないことを示す。
+				"error":  "データ連携に失敗しました。",
 			})
 			return
 		}
@@ -41,7 +51,7 @@ func HandleLogin() gin.HandlerFunc {
 			log.Println(err)
 			ctx.JSON(http.StatusUnauthorized, gin.H{
 				"result": "failed",
-				"error":  "ログインに失敗しました。",
+				"error":  "データ連携に失敗しました。",
 			})
 			return
 		}
@@ -82,7 +92,6 @@ func HandleLogout() gin.HandlerFunc {
 			return
 		}
 
-
 		user_id := json.UserID
 		device_id := json.DeviceID
 		access_token := json.AccessToken
@@ -115,7 +124,7 @@ func HandleLogout() gin.HandlerFunc {
 	}
 }
 
-/* 
+/*
   Token Authorization Handler
 */
 func TokenAuthorize() gin.HandlerFunc {
@@ -125,9 +134,9 @@ func TokenAuthorize() gin.HandlerFunc {
 		var request jsonmodel.Auth
 		if err := ctx.ShouldBindJSON(&request); err != nil {
 			log.Println(err)
-			ctx.JSON(http.StatusBadRequest, gin.H {
+			ctx.JSON(http.StatusBadRequest, gin.H{
 				"result": "failed",
-				"error": "Invalid Request.",
+				"error":  "Invalid Request.",
 			})
 			return
 		}
@@ -140,9 +149,9 @@ func TokenAuthorize() gin.HandlerFunc {
 
 		if err := auth.CheckToken(user_id, device_id, access_token); err != nil {
 			log.Println(err)
-			ctx.JSON(http.StatusInternalServerError, gin.H {
+			ctx.JSON(http.StatusInternalServerError, gin.H{
 				"result": "failed",
-				"error": "Invaild AccessToken.",
+				"error":  "Invaild AccessToken.",
 			})
 			return
 		}
@@ -150,15 +159,15 @@ func TokenAuthorize() gin.HandlerFunc {
 		session_id, err := auth.CreateSession(device_id, access_token, user_id)
 		if err != nil {
 			log.Println(err)
-			ctx.JSON(http.StatusInternalServerError, gin.H {
+			ctx.JSON(http.StatusInternalServerError, gin.H{
 				"result": "failed",
-				"error": "Failed to create session.",
+				"error":  "Failed to create session.",
 			})
 			return
 		}
 
-		ctx.JSON(http.StatusOK, gin.H {
-			"result": "success",
+		ctx.JSON(http.StatusOK, gin.H{
+			"result":     "success",
 			"session_id": session_id,
 		})
 	}
