@@ -11,10 +11,9 @@ type EditUserRequest struct {
 }
 
 type SignupUserRequest struct {
-	Name      string `json:"name" binding:"required"`
-	AccountID string `json:"account_id" binding:"required"`
-	Password  string `json:"password" binding:"required"`
-	DeviceID  string `json:"device_id" binding:"required"`
+	Name     string `json:"name" binding:"required"`
+	Password string `json:"password" binding:"required"`
+	DeviceID string `json:"device_id" binding:"required"`
 }
 
 type EditAccountRequest struct {
