@@ -114,11 +114,28 @@ func EditAccount() gin.HandlerFunc {
 			return
 		}
 
+		//登録しようとするユーザが既にいないか確認 (account_id)
+		var c_account_id int64
+		if err := database.Sqldb.Model(&model.User{}).Where("account_id = ?", json.AccountID).Select("id").Count(&c_account_id).Error; err != nil {
+			ctx.JSON(http.StatusInternalServerError, gin.H{
+				"result": "failed",
+				"error":  "データ連携の設定に失敗しました",
+			})
+			return
+		}
+		if c_account_id > 0 {
+			ctx.JSON(http.StatusBadRequest, gin.H{
+				"result": "failed",
+				"error":  "このidは既に使われています",
+			})
+			return
+		}
+
 		//request data に含まれるパスワードをハッシュ化する
 		if err := auth.HashString(&json.Password); err != nil {
 			ctx.JSON(http.StatusInternalServerError, gin.H{
 				"result": "failed",
-				"error":  "ユーザの新規作成に失敗しました",
+				"error":  "データ連携の設定に失敗しました",
 			})
 			return
 		}
