@@ -16,9 +16,10 @@ func GetRouterV2() *gin.Engine {
 		{
 			user.PUT("", controller.HandleSignUp())
 			user.DELETE("", controller.HandleLogout())
-			account := user.Group("/account")
+			account := user.Group("/account") //アカウント連携
 			{
-				account.PUT("", controller.LoginAccount())
+				account.POST("", controller.LoginAccount())
+				account.PUT("/:userid", controller.EditAccount())
 			}
 		}
 
