@@ -13,6 +13,7 @@ import (
 
 func RequestValidation() gin.HandlerFunc {
 	return func(ctx *gin.Context) {
+		/* before process */
 		signature_key := "test key"
 		timestamp := ctx.GetHeader("X-Birdol-Request-Timestamp")
 		signature := ctx.GetHeader("X-Birdol-Signature")
@@ -20,9 +21,9 @@ func RequestValidation() gin.HandlerFunc {
 		buf := make([]byte, 2048)
 		n, err := ctx.Request.Body.Read(buf)
 		if err != nil {
-			ctx.JSON(http.StatusBadRequest, gin.H{
+			ctx.JSON(http.StatusInternalServerError, gin.H{
 				"result": "failed",
-				"error":  "不適切なリクエストです。",
+				"error":  "Server Error",
 			})
 			ctx.Abort()
 		}
@@ -36,12 +37,14 @@ func RequestValidation() gin.HandlerFunc {
 		if signature != generated_signature {
 			ctx.JSON(http.StatusBadRequest, gin.H{
 				"result": "failed",
-				"error":  "不適切なリクエストです。",
+				"error":  "Bad Request",
 			})
 			ctx.Abort()
 		}
 
 		ctx.Next()
+
+		/* after process */
 	}
 }
 

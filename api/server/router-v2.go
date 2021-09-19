@@ -12,7 +12,6 @@ func GetRouterV2() *gin.Engine{
 	router := gin.Default()
 	v2 := router.Group("api/v2")
 	{
-		v2.Use(middlewares.RequestValidation())
 		user := v2.Group("/user")
 		{
 			user.PUT("", controller.HandleSignUp())
@@ -21,6 +20,7 @@ func GetRouterV2() *gin.Engine{
 		}
 
 		auth := v2.Group("/auth")
+		auth.Use(middlewares.RequestValidation())
 		{
 			auth.POST("", controller.TokenAuthorize()) // Login using Token
 		}
