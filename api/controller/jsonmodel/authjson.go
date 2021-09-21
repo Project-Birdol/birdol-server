@@ -6,10 +6,11 @@ type Auth struct {
 	DeviceID    string `json:"device_id" binding:"required"`
 }
 
-type AuthLoginRequest struct {
+type DataLinkRequest struct {
 	AccountID string `json:"account_id" binding:"required"`
 	Password  string `json:"password" binding:"required"`
 	DeviceID  string `json:"device_id" binding:"required"`
+	PublicKey string `json:"public_key" binding:"required"`
 }
 
 type AuthLogoutRequest struct {

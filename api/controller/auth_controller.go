@@ -3,6 +3,7 @@ package controller
 import (
 	"log"
 	"net/http"
+	"time"
 
 	"github.com/MISW/birdol-server/auth"
 	"github.com/MISW/birdol-server/controller/jsonmodel"
@@ -11,66 +12,71 @@ import (
 	"github.com/gin-gonic/gin"
 )
 
-// LoginAccount Login: account_idとpasswordで認証後にaccess tokenを発行する。 ゲーム内でのアカウント連携
-func LoginAccount() gin.HandlerFunc {
+/*
+  SetDataLink : Loginするためのpasswordを設定, 更新する
+*/
+func SetDataLink() gin.HandlerFunc {
 	return func(ctx *gin.Context) {
-		log.SetPrefix("[HandleLogin]")
-		//request data の jsonを変換
-		var json jsonmodel.AuthLoginRequest
+		log.SetPrefix("[SetDataLink] ")
+		token_interface, _ := ctx.Get("access_token")
+		token_info := token_interface.(model.AccessToken)
+
+		// request data の jsonを変換
+		var json jsonmodel.EnableLinkRequest
 		if err := ctx.ShouldBindJSON(&json); err != nil {
 			log.Println(err)
 			ctx.JSON(http.StatusBadRequest, gin.H{
 				"result": "failed",
-				"error":  "不適切なリクエストです。",
+				"error":  "不適切なリクエストです",
 			})
 			return
 		}
 
-		//account_idが合っているかを確認。そのaccount_idでdatabaseからデータ取得
-		var u model.User
-		if err := database.Sqldb.Where("account_id = ?", json.AccountID).Take(&u).Error; err != nil {
-			log.Println(err)
-			ctx.JSON(http.StatusUnauthorized, gin.H{
-				"result": "failed",
-				"error":  "データ連携に失敗しました。",
-			})
-			return
-		}
-
-		//passwordが合っているかHash値を比較
-		if err := auth.CompareHashedString(u.Password, json.Password); err != nil {
-			log.Println(err)
-			ctx.JSON(http.StatusUnauthorized, gin.H{
-				"result": "failed",
-				"error":  "データ連携に失敗しました。",
-			})
-			return
-		}
-
-		//access token の生成及び保存
-		token, err := auth.SetToken(u.ID, json.DeviceID)
-		if err != nil {
-			log.Println(err)
+		// request data に含まれるパスワードをハッシュ化する
+		if err := auth.HashString(&json.Password); err != nil {
 			ctx.JSON(http.StatusInternalServerError, gin.H{
 				"result": "failed",
-				"error":  "サーバでエラーが生じました。",
+				"error":  "データ連携の設定に失敗しました",
 			})
 			return
 		}
 
-		//response
+		// Set expire date
+		expire_day := time.Now().Add(time.Hour * 24 * 7)
+
+		// update database
+		result := database.Sqldb.Model(&model.User{}).Where("id = ?", token_info.UserID).Updates(map[string]interface{}{"password": json.Password, "expire_date": expire_day})
+		if result.Error != nil { // error
+			log.Println(result.Error)
+			ctx.JSON(http.StatusBadRequest, gin.H{
+				"result": "failed",
+				"error":  "不適切なリクエストです",
+			})
+			return
+		}
+		if result.RowsAffected == 0 { // mismatch user id
+			ctx.JSON(http.StatusBadRequest, gin.H{
+				"result": "failed",
+				"error":  "不適切なリクエストです",
+			})
+			return
+		}
+
+		// response
 		ctx.JSON(http.StatusOK, gin.H{
-			"result":       "success",
-			"user_id":      u.ID,
-			"access_token": token,
+			"result": "success",
 		})
 	}
 }
 
-// HandleLogout Logout: user_idとaccess_tokenで認証した後にaccess_tokenを削除する。
-func HandleLogout() gin.HandlerFunc {
+/*
+  UnlinkAccount : Logoutしてaccess_token，関連sessionを削除する
+*/
+func UnlinkAccount() gin.HandlerFunc {
 	return func(ctx *gin.Context) {
-		log.SetPrefix("[HandleLogout]")
+		log.SetPrefix("[UnlinkAccount] ")
+		token_interface, _ := ctx.Get("access_token")
+		token_info := token_interface.(model.AccessToken)
 
 		//request data のjsonを変換
 		var json jsonmodel.AuthLogoutRequest
@@ -83,33 +89,30 @@ func HandleLogout() gin.HandlerFunc {
 			return
 		}
 
-		user_id := json.UserID
-		device_id := json.DeviceID
-		access_token := json.AccessToken
+		access_token := token_info.Token
+		device_id := token_info.DeviceID
 
-		//access token が正しいか確認
-		if err := auth.CheckToken(user_id, device_id, access_token); err != nil {
+		// logoutリクエストのため、access tokenを削除する
+		if err := auth.DeleteToken(access_token, device_id); err != nil {
 			log.Println(err)
-			ctx.JSON(http.StatusUnauthorized, gin.H{
-				"result": "failed",
-				"error":  "認証に失敗しました。",
-			})
-			return
-		}
-
-		//logoutリクエストのため、access tokenを削除する。
-		if err := auth.DeleteToken(user_id); err != nil {
-			log.Println(err)
-			ctx.JSON(http.StatusInternalServerError, gin.H{
+			ctx.JSON(http.StatusInternalServerError, gin.H {
 				"result": "failed",
 				"error":  "サーバでエラーが生じました。",
 			})
 			return
 		}
-		database.Sqldb.Model(&model.Session{}).Where("access_token = ?", access_token).Update("expired", true)
+
+		if err := database.Sqldb.Where("access_token = ?", access_token).Delete(&model.Session{}).Error; err != nil {
+			log.Println(err)
+			ctx.JSON(http.StatusInternalServerError, gin.H {
+				"result": "failed",
+				"error":  "サーバでエラーが生じました。",
+			})
+			return
+		}
 
 		//レスポンス
-		ctx.JSON(http.StatusOK, gin.H{
+		ctx.JSON(http.StatusOK, gin.H {
 			"result": "success",
 		})
 	}
@@ -121,31 +124,12 @@ func HandleLogout() gin.HandlerFunc {
 func TokenAuthorize() gin.HandlerFunc {
 	return func(ctx *gin.Context) {
 		log.SetPrefix("[TokenAuthorize] ")
-		// Processing request
-		var request jsonmodel.Auth
-		if err := ctx.ShouldBindJSON(&request); err != nil {
-			log.Println(err)
-			ctx.JSON(http.StatusBadRequest, gin.H{
-				"result": "failed",
-				"error":  "Invalid Request.",
-			})
-			return
-		}
+		token_interface, _ := ctx.Get("access_token")
+		token_info := token_interface.(model.AccessToken)
 
-		/* TODO: JSONパラメータチェック */
-
-		user_id := request.UserID
-		access_token := request.AccessToken
-		device_id := request.DeviceID
-
-		if err := auth.CheckToken(user_id, device_id, access_token); err != nil {
-			log.Println(err)
-			ctx.JSON(http.StatusInternalServerError, gin.H{
-				"result": "failed",
-				"error":  "Invaild AccessToken.",
-			})
-			return
-		}
+		user_id := token_info.UserID
+		access_token := token_info.Token
+		device_id := token_info.DeviceID
 
 		session_id, err := auth.CreateSession(device_id, access_token, user_id)
 		if err != nil {
@@ -159,6 +143,55 @@ func TokenAuthorize() gin.HandlerFunc {
 
 		ctx.JSON(http.StatusOK, gin.H{
 			"result":     "success",
+			"session_id": session_id,
+		})
+	}
+}
+
+/*
+  Regenerate token using refresh_token
+*/
+func RefreshToken() gin.HandlerFunc {
+	return func(ctx *gin.Context) {
+		log.SetPrefix("[RefreshToken] ")
+		token_interface, _ := ctx.Get("access_token")
+		token_info := token_interface.(model.AccessToken)
+		refresh_token := ctx.Query("refresh_token")
+
+		user_id := token_info.UserID
+		device_id := token_info.DeviceID
+
+		if refresh_token != token_info.RefreshToken {
+			ctx.JSON(http.StatusNotAcceptable, gin.H {
+				"result": "failed",
+				"error":  "Invalid refresh token",
+			})
+			return
+		}
+				
+		new_token, new_refresh, err := auth.SetToken(token_info.UserID, token_info.DeviceID, token_info.PublicKey)
+		if err != nil {
+			ctx.JSON(http.StatusInternalServerError, gin.H {
+				"result": "failed",
+				"error": "something went wrong",
+			})
+			return
+		}
+
+		session_id, err := auth.CreateSession(device_id, new_token, user_id)
+		if err != nil {
+			log.Println(err)
+			ctx.JSON(http.StatusInternalServerError, gin.H{
+				"result": "failed",
+				"error":  "Failed to create session.",
+			})
+			return
+		}
+			
+		ctx.JSON(http.StatusContinue, gin.H {
+			"result": "refreshed",
+			"token": new_token,
+			"refresh_token": new_refresh,
 			"session_id": session_id,
 		})
 	}
