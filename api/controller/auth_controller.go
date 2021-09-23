@@ -1,6 +1,7 @@
 package controller
 
 import (
+	"encoding/json"
 	"log"
 	"net/http"
 	"time"
@@ -21,9 +22,11 @@ func SetDataLink() gin.HandlerFunc {
 		token_interface, _ := ctx.Get("access_token")
 		token_info := token_interface.(model.AccessToken)
 
-		// request data の jsonを変換
-		var json jsonmodel.EnableLinkRequest
-		if err := ctx.ShouldBindJSON(&json); err != nil {
+		// request_body data の jsonを変換
+		var request_body jsonmodel.EnableLinkRequest
+		body_byte_interface, _ := ctx.Get("body_rawbyte")
+		body_rawbyte := body_byte_interface.([]byte)
+		if err := json.Unmarshal(body_rawbyte, &request_body); err != nil {
 			log.Println(err)
 			ctx.JSON(http.StatusBadRequest, gin.H{
 				"result": "failed",
@@ -33,7 +36,7 @@ func SetDataLink() gin.HandlerFunc {
 		}
 
 		// request data に含まれるパスワードをハッシュ化する
-		if err := auth.HashString(&json.Password); err != nil {
+		if err := auth.HashString(&request_body.Password); err != nil {
 			ctx.JSON(http.StatusInternalServerError, gin.H{
 				"result": "failed",
 				"error":  "データ連携の設定に失敗しました",
@@ -45,7 +48,7 @@ func SetDataLink() gin.HandlerFunc {
 		expire_day := time.Now().Add(time.Hour * 24 * 7)
 
 		// update database
-		result := database.Sqldb.Model(&model.User{}).Where("id = ?", token_info.UserID).Updates(map[string]interface{}{"password": json.Password, "expire_date": expire_day})
+		result := database.Sqldb.Model(&model.User{}).Where("id = ?", token_info.UserID).Updates(map[string]interface{}{"password": request_body.Password, "expire_date": expire_day})
 		if result.Error != nil { // error
 			log.Println(result.Error)
 			ctx.JSON(http.StatusBadRequest, gin.H{
@@ -79,9 +82,11 @@ func UnlinkAccount() gin.HandlerFunc {
 		token_interface, _ := ctx.Get("access_token")
 		token_info := token_interface.(model.AccessToken)
 
-		//request data のjsonを変換
-		var json jsonmodel.AuthLogoutRequest
-		if err := ctx.ShouldBindJSON(&json); err != nil {
+		//request data のrequest_bodyを変換
+		var request_body jsonmodel.AuthLogoutRequest
+		body_byte_interface, _ := ctx.Get("body_rawbyte")
+		body_rawbyte := body_byte_interface.([]byte)
+		if err := json.Unmarshal(body_rawbyte, &request_body); err != nil {
 			log.Println(err)
 			ctx.JSON(http.StatusBadRequest, gin.H{
 				"result": "failed",

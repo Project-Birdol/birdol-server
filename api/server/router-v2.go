@@ -35,9 +35,19 @@ func GetRouterV2() *gin.Engine {
 		gamedata := v2.Group("/gamedata")
 		gamedata.Use(middlewares.RequestValidation())
 		gamedata.Use(middlewares.CheckToken())
-		// TODO: Check session_id
 		{
 			// UNIMPLEMENTED
+			gamedata_nobody := gamedata.Group("")
+			gamedata_nobody.Use(middlewares.ReadSessionIDfromQuery())
+			{
+				// Requests that have no body
+			}
+
+			gamedata_body := gamedata.Group("")
+			gamedata_body.Use(middlewares.ReadSessionIDfromBody())
+			{
+				// Requests that have body
+			}
 		}
 	}
 	return router

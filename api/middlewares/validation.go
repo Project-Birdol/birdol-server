@@ -1,7 +1,6 @@
 package middlewares
 
 import (
-	"bytes"
 	"crypto"
 	"crypto/rsa"
 	"crypto/sha256"
@@ -9,7 +8,6 @@ import (
 	"encoding/hex"
 	"encoding/xml"
 	"io"
-	"io/ioutil"
 	"log"
 	"math/big"
 	"net/http"
@@ -86,9 +84,9 @@ func RequestValidation() gin.HandlerFunc {
 			return
 		}
 
-		request_byte, _ := io.ReadAll(ctx.Request.Body)
-		request_body := string(request_byte)
-		ctx.Request.Body = ioutil.NopCloser(bytes.NewBuffer([]byte(request_body)))
+		body_byte, _ := io.ReadAll(ctx.Request.Body)
+		ctx.Set("body_rawbyte", body_byte)
+		request_body := string(body_byte)
 
 		prefix := os.Getenv("API_VERSION")
 		replacer := strings.NewReplacer("\r\n", "\n")
