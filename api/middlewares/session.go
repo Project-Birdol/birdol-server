@@ -11,7 +11,7 @@ import (
 
 // to read session_id
 type ExtructSession struct {
-	SessionID string `json:"session_id" binding:"required"`
+	SessionID string `json:"session_id"`
 }
 
 func ReadSessionIDfromQuery() gin.HandlerFunc {

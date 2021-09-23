@@ -8,7 +8,6 @@ import (
 	"encoding/hex"
 	"encoding/xml"
 	"io"
-	"log"
 	"math/big"
 	"net/http"
 	"os"
@@ -34,7 +33,6 @@ func RequestValidation() gin.HandlerFunc {
 	return func(ctx *gin.Context) {
 		// pick params from header
 		authorization := ctx.GetHeader("Authorization")
-		log.Println(authorization)
 		device_id := ctx.GetHeader("device_id")
 		signature_str := ctx.GetHeader("X-Birdol-Signature")
 		timestamp := ctx.GetHeader("X-Birdol-TimeStamp")
