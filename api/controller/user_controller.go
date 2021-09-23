@@ -94,7 +94,7 @@ func HandleSignUp() gin.HandlerFunc {
 func LinkAccount() gin.HandlerFunc {
 	return func(ctx *gin.Context) {
 		log.SetPrefix("[Login] ")
-		//request data の jsonを変換
+		// request data の jsonを変換
 		var json jsonmodel.DataLinkRequest
 		if err := ctx.ShouldBindJSON(&json); err != nil {
 			log.Println(err)
@@ -105,7 +105,7 @@ func LinkAccount() gin.HandlerFunc {
 			return
 		}
 
-		//account_idが合っているかを確認。そのaccount_idでdatabaseからデータ取得
+		// account_idが合っているかを確認。そのaccount_idでdatabaseからデータ取得
 		var u model.User
 		if err := database.Sqldb.Where("account_id = ?", json.AccountID).Take(&u).Error; err != nil {
 			log.Println(err)
@@ -116,7 +116,17 @@ func LinkAccount() gin.HandlerFunc {
 			return
 		}
 
-		//passwordが合っているかHash値を比較
+		// expire check
+		now := time.Now()
+		if now.After(u.LinkPassword.ExpireDate) {
+			ctx.JSON(http.StatusNotAcceptable, gin.H{
+				"result": "failed",
+				"error":  "password_expired",
+			})
+			return
+		}
+
+		// passwordが合っているかHash値を比較
 		if err := auth.CompareHashedString(u.LinkPassword.Password, json.Password); err != nil {
 			log.Println(err)
 			ctx.JSON(http.StatusUnauthorized, gin.H{
@@ -126,7 +136,17 @@ func LinkAccount() gin.HandlerFunc {
 			return
 		}
 
-		//access token の生成及び保存
+		// disable used password
+		if err := database.Sqldb.Model(&model.User{}).Where("id = ?", u.ID).Update("expire_date", time.Now()).Error; err != nil {
+			log.Println(err)
+			ctx.JSON(http.StatusInternalServerError, gin.H{
+				"result": "failed",
+				"error":  "サーバでエラーが生じました。",
+			})
+			return
+		}
+
+		// access token の生成及び保存
 		token, refresh_token, err := auth.SetToken(u.ID, json.DeviceID, json.PublicKey)
 		if err != nil {
 			log.Println(err)
@@ -137,7 +157,7 @@ func LinkAccount() gin.HandlerFunc {
 			return
 		}
 
-		//response
+		// response
 		ctx.JSON(http.StatusOK, gin.H{
 			"result":       "success",
 			"user_id":      u.ID,

@@ -13,6 +13,7 @@ import (
 	"log"
 	"math/big"
 	"net/http"
+	"os"
 	"regexp"
 	"strings"
 
@@ -89,9 +90,10 @@ func RequestValidation() gin.HandlerFunc {
 		request_body := string(request_byte)
 		ctx.Request.Body = ioutil.NopCloser(bytes.NewBuffer([]byte(request_body)))
 
+		prefix := os.Getenv("API_VERSION")
 		replacer := strings.NewReplacer("\r\n", "\n")
 		request_body = replacer.Replace(request_body)
-		signature_base := "v2:" + timestamp + ":" + request_body
+		signature_base := prefix + ":" + timestamp + ":" + request_body
 		hashed_base := sha256.Sum256([]byte(signature_base))
 		signature, _ := hex.DecodeString(signature_str)
 
