@@ -1,7 +1,7 @@
 FROM golang:1.16-alpine as builder 
 
 RUN apk update \
-  && apk add --no-cache git curl make gcc g++ 
+  && apk add --no-cache git curl make gcc g++ tzdata
 
 WORKDIR /app
 

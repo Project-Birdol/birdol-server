@@ -2,6 +2,7 @@ package server
 
 import (
 	"github.com/MISW/birdol-server/controller"
+	"github.com/MISW/birdol-server/middlewares"
 	"github.com/gin-gonic/gin"
 )
 
@@ -15,19 +16,23 @@ func GetRouterV1() *gin.Engine {
 		user := v1.Group("/user")
 		{
 			user.PUT("", controller.HandleSignUp())
-			user.DELETE("", controller.UnlinkAccount())
-			account := user.Group("/account") //アカウント連携
-			{
-				account.POST("", controller.LinkAccount())
-				account.PUT("/:userid", controller.SetDataLink())
-			}
+			user.POST("", controller.LinkAccount())
 		}
 
 		auth := v1.Group("/auth")
+		auth.Use(middlewares.RequestValidation())
 		{
-			auth.POST("", controller.TokenAuthorize()) // Login using Token
+			auth_root := auth.Group("")
+			auth_root.Use(middlewares.CheckToken())
+			{
+				auth_root.GET("", controller.TokenAuthorize()) // Login using Token
+				auth_root.DELETE("", controller.UnlinkAccount()) // Unlink Account
+				auth_root.PUT("", controller.SetDataLink()) // Link Account
+			}
+			auth.GET("/refresh", controller.RefreshToken()) // Token Refresh
 		}
-		progress := v1.Group("/progress/:userid")
+
+		progress := v1.Group("/gamedata/:userid")
 		{
 			progress.GET("/gallery", controller.GetGalleryInfo())
 			progress.PUT("/complete", controller.FinishProgress())

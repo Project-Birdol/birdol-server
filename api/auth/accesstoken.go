@@ -2,7 +2,6 @@ package auth
 
 import (
 	"crypto/rand"
-	"errors"
 	"log"
 	"math/big"
 	"time"
@@ -70,45 +69,6 @@ func DeleteToken(token string, device_id string) error {
 		return err
 	}
 
-	return nil
-}
-
-// CheckToken checks if token is already stored in database: return error if not stored or already expired or mis-match token
-func CheckToken(userID uint, device_id string, token string) error {
-	// dbからTokenが保存されているか否か
-	var storedTokens []model.AccessToken
-	database.Sqldb.Where("user_id = ?", userID).Find(&storedTokens)
-	if len(storedTokens) == 0 {
-		return errors.New("tokens not found")
-	}
-	for i := 0; i < len(storedTokens); i++ {
-		if storedTokens[i].Token != token {
-			if i == len(storedTokens) - 1 { return errors.New("invalid token") }
-			continue
-		}
-		if storedTokens[i].DeviceID != device_id {
-			return errors.New("invalid device")
-		}
-		if err := checkTokenExpire(storedTokens[i].TokenUpdated); err != nil {
-			return err;
-		}
-		break
-	}
-
-	// 認証okの時にtokenの有効期限を伸ばす場合は、TokenUpdatedを現在時刻に変更する。
-	if err := database.Sqldb.Model(&model.AccessToken{}).Where("user_id = ? AND device_id = ?", userID, device_id).Update("token_updated", time.Now()).Error; err != nil {
-		return err
-	}
-
-	log.Printf("right match token: user_id(%d), device_id(%s), token(%s)\n", userID, device_id, token)
-	return nil
-}
-
-// checkTokenExpire checks if stored token is expired: if expired, return error
-func checkTokenExpire(updated time.Time) error {
-	if time.Since(updated).Seconds() > tokenExpireSeconds {
-		return errors.New("token has expired")
-	}
 	return nil
 }
 

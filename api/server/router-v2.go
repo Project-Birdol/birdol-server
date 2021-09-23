@@ -23,18 +23,19 @@ func GetRouterV2() *gin.Engine {
 		auth.Use(middlewares.RequestValidation())
 		{
 			auth_root := auth.Group("")
-			auth_root.Use(middlewares.TokenRefresh())
+			auth_root.Use(middlewares.CheckToken())
 			{
-				auth.GET("", controller.TokenAuthorize()) // Login using Token
-				auth.DELETE("", controller.UnlinkAccount()) // Unlink Account
-				auth.PUT("", controller.SetDataLink()) // Link Account
+				auth_root.GET("", controller.TokenAuthorize()) // Login using Token
+				auth_root.DELETE("", controller.UnlinkAccount()) // Unlink Account
+				auth_root.PUT("", controller.SetDataLink()) // Link Account
 			}
 			auth.GET("/refresh", controller.RefreshToken()) // Token Refresh
 		}
 
 		gamedata := v2.Group("/gamedata")
 		gamedata.Use(middlewares.RequestValidation())
-		gamedata.Use(middlewares.TokenRefresh())
+		gamedata.Use(middlewares.CheckToken())
+		// TODO: Check session_id
 		{
 			// UNIMPLEMENTED
 		}

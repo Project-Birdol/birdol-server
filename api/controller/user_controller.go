@@ -4,6 +4,7 @@ import (
 	"log"
 	"math/rand"
 	"net/http"
+	"time"
 
 	"github.com/MISW/birdol-server/auth"
 	"github.com/MISW/birdol-server/controller/jsonmodel"
@@ -56,7 +57,7 @@ func HandleSignUp() gin.HandlerFunc {
 		}
 
 		// ユーザ新規作成。保存
-		new_user := model.User{Name: json.Name, AccountID: account_id}
+		new_user := model.User{Name: json.Name, AccountID: account_id, LinkPassword: model.LinkPassword{ExpireDate: time.Now()}}
 		if err := database.Sqldb.Create(&new_user).Error; err != nil {
 			ctx.JSON(http.StatusInternalServerError, gin.H{
 				"result": "failed",

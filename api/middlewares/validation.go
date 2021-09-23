@@ -6,11 +6,15 @@ import (
 	"crypto/rsa"
 	"crypto/sha256"
 	"encoding/base64"
+	"encoding/hex"
 	"encoding/xml"
 	"io"
 	"io/ioutil"
+	"log"
 	"math/big"
 	"net/http"
+	"regexp"
+	"strings"
 
 	"github.com/MISW/birdol-server/database"
 	"github.com/MISW/birdol-server/database/model"
@@ -30,28 +34,43 @@ type rsaPublicKey struct {
 func RequestValidation() gin.HandlerFunc {
 	return func(ctx *gin.Context) {
 		// pick params from header
-		access_token := ctx.GetHeader("Authorization")
+		authorization := ctx.GetHeader("Authorization")
+		log.Println(authorization)
 		device_id := ctx.GetHeader("device_id")
-		signature := ctx.GetHeader("X-Birdol-Signature")
+		signature_str := ctx.GetHeader("X-Birdol-Signature")
 		timestamp := ctx.GetHeader("X-Birdol-TimeStamp")
+
+		// Verify Authorization Header
+		reg := regexp.MustCompile(`Bearer (.+)$`)
+		if !reg.MatchString(authorization) {
+			ctx.JSON(http.StatusUnauthorized, gin.H {
+				"result": "failed",
+				"error": "invalid_token",
+			})
+			ctx.Abort()
+			return
+		}
+		access_token := reg.FindStringSubmatch(authorization)[1]
 
 		// confirm accesstoken
 		var recv_token model.AccessToken
-		if err := database.Sqldb.Where("access_token = ?", access_token).First(&recv_token).Error; err != nil {
+		if err := database.Sqldb.Where("token = ?", access_token).First(&recv_token).Error; err != nil {
 			ctx.JSON(http.StatusUnauthorized, gin.H {
 				"result": "failed",
-				"error":  "Invalid token",
+				"error":  "invalid_token",
 			})
 			ctx.Abort()
+			return
 		}
 
 		// confirm device id
 		if device_id != recv_token.DeviceID {
 			ctx.JSON(http.StatusUnauthorized, gin.H {
 				"result": "failed",
-				"error":  "Invalid DeviceID",
+				"error":  "invalid_DeviceID",
 			})
 			ctx.Abort()
+			return
 		}
 
 		// Verify signature
@@ -63,25 +82,30 @@ func RequestValidation() gin.HandlerFunc {
 				"error": "something went wrong",
 			})
 			ctx.Abort()
+			return
 		}
 
 		request_byte, _ := io.ReadAll(ctx.Request.Body)
 		request_body := string(request_byte)
 		ctx.Request.Body = ioutil.NopCloser(bytes.NewBuffer([]byte(request_body)))
 
+		replacer := strings.NewReplacer("\r\n", "\n")
+		request_body = replacer.Replace(request_body)
 		signature_base := "v2:" + timestamp + ":" + request_body
 		hashed_base := sha256.Sum256([]byte(signature_base))
+		signature, _ := hex.DecodeString(signature_str)
 
-		verify_err := rsa.VerifyPKCS1v15(&public_key, crypto.SHA256, hashed_base[:], []byte(signature))
+		verify_err := rsa.VerifyPKCS1v15(&public_key, crypto.SHA256, hashed_base[:], signature)
 		if verify_err != nil {
 			ctx.JSON(http.StatusNotAcceptable, gin.H {
 				"result": "failed",
 				"error":  "Invalid signature",
 			})
 			ctx.Abort()
+			return
 		}
 
-		ctx.Set("AccessToken", recv_token)
+		ctx.Set("access_token", recv_token)
 
 		ctx.Next()
 	}

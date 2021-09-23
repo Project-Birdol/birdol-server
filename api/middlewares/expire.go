@@ -8,16 +8,17 @@ import (
 	"github.com/gin-gonic/gin"
 )
 
-func TokenRefresh() gin.HandlerFunc {
+func CheckToken() gin.HandlerFunc {
 	return func (ctx *gin.Context) {
 		token_interface, _ := ctx.Get("access_token")
 		token_info := token_interface.(model.AccessToken)
 
 		if time.Since(token_info.TokenUpdated).Seconds() > 604800 - 300 {
-			ctx.JSON(http.StatusContinue, gin.H {
+			ctx.JSON(http.StatusAccepted, gin.H {
 				"result": "need_refresh",
 			})
 			ctx.Abort()
+			return
 		}
 
 		ctx.Next()

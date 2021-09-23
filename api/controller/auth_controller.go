@@ -65,6 +65,7 @@ func SetDataLink() gin.HandlerFunc {
 		// response
 		ctx.JSON(http.StatusOK, gin.H{
 			"result": "success",
+			"expire_date": expire_day.Format("2006-01-02 15:04:05"),
 		})
 	}
 }
@@ -188,7 +189,7 @@ func RefreshToken() gin.HandlerFunc {
 			return
 		}
 			
-		ctx.JSON(http.StatusContinue, gin.H {
+		ctx.JSON(http.StatusAccepted, gin.H {
 			"result": "refreshed",
 			"token": new_token,
 			"refresh_token": new_refresh,
