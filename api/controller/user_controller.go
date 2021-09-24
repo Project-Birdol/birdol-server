@@ -10,19 +10,17 @@ import (
 	"github.com/MISW/birdol-server/controller/jsonmodel"
 	"github.com/MISW/birdol-server/database"
 	"github.com/MISW/birdol-server/database/model"
+	"github.com/MISW/birdol-server/utils/response"
 	"github.com/gin-gonic/gin"
 )
 
 // 新規ユーザ登録
 func HandleSignUp() gin.HandlerFunc {
 	return func(ctx *gin.Context) {
-		// map to struct
+		// parse json
 		var request_body jsonmodel.SignupUserRequest
 		if err := ctx.ShouldBindJSON(&request_body); err != nil {
-			ctx.JSON(http.StatusBadRequest, gin.H{
-				"result": "failed",
-				"error":  "不適切なリクエストです",
-			})
+			response.SetErrorResponse(ctx, http.StatusBadRequest, response.ErrFailParseJSON)
 			return
 		}
 
@@ -34,20 +32,14 @@ func HandleSignUp() gin.HandlerFunc {
 			i++
 			if i > 100 {
 				log.Printf("failed to create account id.")
-				ctx.JSON(http.StatusInternalServerError, gin.H{
-					"result": "failed",
-					"error":  "アカウント作成に失敗しました",
-				})
+				response.SetErrorResponse(ctx, http.StatusInternalServerError, response.ErrFailAccountCreation)
 				return
 			}
 
 			// 重複チェック
 			var c_account_id int64
 			if err := database.Sqldb.Model(&model.User{}).Where("account_id = ?", account_id).Select("id").Count(&c_account_id).Error; err != nil {
-				ctx.JSON(http.StatusInternalServerError, gin.H{
-					"result": "failed",
-					"error":  "アカウント作成に失敗しました",
-				})
+				response.SetErrorResponse(ctx, http.StatusInternalServerError, response.ErrFailAccountCreation)
 				return
 			}
 			if c_account_id == 0 {
@@ -59,34 +51,25 @@ func HandleSignUp() gin.HandlerFunc {
 		// ユーザ新規作成。保存
 		new_user := model.User{Name: request_body.Name, AccountID: account_id, LinkPassword: model.LinkPassword{ExpireDate: time.Now()}}
 		if err := database.Sqldb.Create(&new_user).Error; err != nil {
-			ctx.JSON(http.StatusInternalServerError, gin.H{
-				"result": "failed",
-				"error":  "ユーザの新規作成に失敗しました",
-			})
+			response.SetErrorResponse(ctx, http.StatusInternalServerError, response.ErrFailAccountCreation)
 			return
 		}
-
-		// 新規作成したユーザのIDを取得
-		// log.Printf("[TEST] USER ID: %d\n", u)
 
 		// アクセストークンを生成
 		token, refresh_token, err := auth.SetToken(new_user.ID, request_body.DeviceID, request_body.PublicKey)
 		if err != nil {
-			ctx.JSON(http.StatusInternalServerError, gin.H{
-				"result": "failed",
-				"error":  "ユーザの新規作成に失敗しました",
-			})
+			response.SetErrorResponse(ctx, http.StatusInternalServerError, response.ErrFailAccountCreation)
 			return
 		}
 
 		// Successful
-		ctx.JSON(http.StatusOK, gin.H{
-			"result":        "success",
+		property := gin.H {
 			"user_id":       new_user.ID,
 			"access_token":  token,
 			"refresh_token": refresh_token,
 			"account_id":    account_id,
-		})
+		}
+		response.SetNormalResponse(ctx, http.StatusOK, response.ResultOK, property)
 	}
 }
 
@@ -94,15 +77,11 @@ func HandleSignUp() gin.HandlerFunc {
 func LinkAccount() gin.HandlerFunc {
 	return func(ctx *gin.Context) {
 		log.SetPrefix("[Login] ")
-		// request data の request_bodyを変換
+		// parse json
 		var request_body jsonmodel.DataLinkRequest
-		
 		if err := ctx.ShouldBindJSON(&request_body); err != nil {
 			log.Println(err)
-			ctx.JSON(http.StatusBadRequest, gin.H{
-				"result": "failed",
-				"error":  "不適切なリクエストです。",
-			})
+			response.SetErrorResponse(ctx, http.StatusBadRequest, response.ErrFailParseJSON)
 			return
 		}
 
@@ -110,40 +89,28 @@ func LinkAccount() gin.HandlerFunc {
 		var u model.User
 		if err := database.Sqldb.Where("account_id = ?", request_body.AccountID).Take(&u).Error; err != nil {
 			log.Println(err)
-			ctx.JSON(http.StatusUnauthorized, gin.H{
-				"result": "failed",
-				"error":  "データ連携に失敗しました。",
-			})
+			response.SetErrorResponse(ctx, http.StatusNotFound, response.ErrInvalidAccount)
 			return
 		}
 
 		// expire check
 		now := time.Now()
 		if now.After(u.LinkPassword.ExpireDate) {
-			ctx.JSON(http.StatusNotAcceptable, gin.H{
-				"result": "failed",
-				"error":  "password_expired",
-			})
+			response.SetErrorResponse(ctx, http.StatusUnauthorized, response.ErrPasswordExpire)
 			return
 		}
 
 		// passwordが合っているかHash値を比較
 		if err := auth.CompareHashedString(u.LinkPassword.Password, request_body.Password); err != nil {
 			log.Println(err)
-			ctx.JSON(http.StatusUnauthorized, gin.H{
-				"result": "failed",
-				"error":  "データ連携に失敗しました。",
-			})
+			response.SetErrorResponse(ctx, http.StatusUnauthorized, response.ErrInvalidPassword)
 			return
 		}
 
 		// disable used password
 		if err := database.Sqldb.Model(&model.User{}).Where("id = ?", u.ID).Update("expire_date", time.Now()).Error; err != nil {
 			log.Println(err)
-			ctx.JSON(http.StatusInternalServerError, gin.H{
-				"result": "failed",
-				"error":  "サーバでエラーが生じました。",
-			})
+			response.SetErrorResponse(ctx, http.StatusInternalServerError, response.ErrFailDataLink)
 			return
 		}
 
@@ -151,20 +118,17 @@ func LinkAccount() gin.HandlerFunc {
 		token, refresh_token, err := auth.SetToken(u.ID, request_body.DeviceID, request_body.PublicKey)
 		if err != nil {
 			log.Println(err)
-			ctx.JSON(http.StatusInternalServerError, gin.H{
-				"result": "failed",
-				"error":  "サーバでエラーが生じました。",
-			})
+			response.SetErrorResponse(ctx, http.StatusInternalServerError, response.ErrFailDataLink)
 			return
 		}
 
 		// response
-		ctx.JSON(http.StatusOK, gin.H{
-			"result":       "success",
+		property := gin.H {
 			"user_id":      u.ID,
 			"access_token": token,
 			"refresh_token": refresh_token,
-		})
+		}
+		response.SetNormalResponse(ctx, http.StatusOK, response.ResultOK, property)
 	}
 }
 

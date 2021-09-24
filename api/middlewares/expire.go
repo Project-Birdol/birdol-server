@@ -5,6 +5,7 @@ import (
 	"time"
 
 	"github.com/MISW/birdol-server/database/model"
+	"github.com/MISW/birdol-server/utils/response"
 	"github.com/gin-gonic/gin"
 )
 
@@ -14,9 +15,7 @@ func CheckToken() gin.HandlerFunc {
 		token_info := token_interface.(model.AccessToken)
 
 		if time.Since(token_info.TokenUpdated).Seconds() > 604800 - 300 {
-			ctx.JSON(http.StatusAccepted, gin.H {
-				"result": "need_refresh",
-			})
+			response.SetNormalResponse(ctx, http.StatusAccepted, response.ResultNeedTokenRefresh)
 			ctx.Abort()
 			return
 		}

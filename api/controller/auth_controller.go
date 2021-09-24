@@ -10,11 +10,12 @@ import (
 	"github.com/MISW/birdol-server/controller/jsonmodel"
 	"github.com/MISW/birdol-server/database"
 	"github.com/MISW/birdol-server/database/model"
+	"github.com/MISW/birdol-server/utils/response"
 	"github.com/gin-gonic/gin"
 )
 
 /*
-  SetDataLink : Loginするためのpasswordを設定, 更新する
+	SetDataLink : Loginするためのpasswordを設定, 更新する
 */
 func SetDataLink() gin.HandlerFunc {
 	return func(ctx *gin.Context) {
@@ -28,19 +29,13 @@ func SetDataLink() gin.HandlerFunc {
 		body_rawbyte := body_byte_interface.([]byte)
 		if err := json.Unmarshal(body_rawbyte, &request_body); err != nil {
 			log.Println(err)
-			ctx.JSON(http.StatusBadRequest, gin.H{
-				"result": "failed",
-				"error":  "不適切なリクエストです",
-			})
+			response.SetErrorResponse(ctx, http.StatusInternalServerError, response.ErrFailParseJSON)
 			return
 		}
 
 		// request data に含まれるパスワードをハッシュ化する
 		if err := auth.HashString(&request_body.Password); err != nil {
-			ctx.JSON(http.StatusInternalServerError, gin.H{
-				"result": "failed",
-				"error":  "データ連携の設定に失敗しました",
-			})
+			response.SetErrorResponse(ctx, http.StatusInternalServerError, response.ErrFailSetPassword)
 			return
 		}
 
@@ -48,33 +43,20 @@ func SetDataLink() gin.HandlerFunc {
 		expire_day := time.Now().Add(time.Hour * 24 * 7)
 
 		// update database
-		result := database.Sqldb.Model(&model.User{}).Where("id = ?", token_info.UserID).Updates(map[string]interface{}{"password": request_body.Password, "expire_date": expire_day})
-		if result.Error != nil { // error
-			log.Println(result.Error)
-			ctx.JSON(http.StatusBadRequest, gin.H{
-				"result": "failed",
-				"error":  "不適切なリクエストです",
-			})
-			return
-		}
-		if result.RowsAffected == 0 { // mismatch user id
-			ctx.JSON(http.StatusBadRequest, gin.H{
-				"result": "failed",
-				"error":  "不適切なリクエストです",
-			})
+		if err := database.Sqldb.Model(&model.User{}).Where("id = ?", token_info.UserID).Updates(map[string]interface{}{"password": request_body.Password, "expire_date": expire_day}).Error; err != nil {
+			log.Println(err)
+			response.SetErrorResponse(ctx, http.StatusInternalServerError, response.ErrFailSetPassword)
 			return
 		}
 
 		// response
-		ctx.JSON(http.StatusOK, gin.H{
-			"result": "success",
-			"expire_date": expire_day.Format("2006-01-02 15:04:05"),
-		})
+		property := gin.H { "expire_date": expire_day.Format("2006-01-02 15:04:05") }
+		response.SetNormalResponse(ctx, http.StatusOK, response.ResultOK, property)
 	}
 }
 
 /*
-  UnlinkAccount : Logoutしてaccess_token，関連sessionを削除する
+	UnlinkAccount : Logoutしてaccess_token，関連sessionを削除する
 */
 func UnlinkAccount() gin.HandlerFunc {
 	return func(ctx *gin.Context) {
@@ -88,10 +70,7 @@ func UnlinkAccount() gin.HandlerFunc {
 		body_rawbyte := body_byte_interface.([]byte)
 		if err := json.Unmarshal(body_rawbyte, &request_body); err != nil {
 			log.Println(err)
-			ctx.JSON(http.StatusBadRequest, gin.H{
-				"result": "failed",
-				"error":  "不適切なリクエストです。",
-			})
+			response.SetErrorResponse(ctx, http.StatusInternalServerError, response.ErrFailParseJSON)
 			return
 		}
 
@@ -101,31 +80,23 @@ func UnlinkAccount() gin.HandlerFunc {
 		// logoutリクエストのため、access tokenを削除する
 		if err := auth.DeleteToken(access_token, device_id); err != nil {
 			log.Println(err)
-			ctx.JSON(http.StatusInternalServerError, gin.H {
-				"result": "failed",
-				"error":  "サーバでエラーが生じました。",
-			})
+			response.SetErrorResponse(ctx, http.StatusInternalServerError, response.ErrFailUnlink)
 			return
 		}
 
 		if err := database.Sqldb.Where("access_token = ?", access_token).Delete(&model.Session{}).Error; err != nil {
 			log.Println(err)
-			ctx.JSON(http.StatusInternalServerError, gin.H {
-				"result": "failed",
-				"error":  "サーバでエラーが生じました。",
-			})
+			response.SetErrorResponse(ctx, http.StatusInternalServerError, response.ErrFailUnlink)
 			return
 		}
 
 		//レスポンス
-		ctx.JSON(http.StatusOK, gin.H {
-			"result": "success",
-		})
+		response.SetNormalResponse(ctx, http.StatusOK, response.ResultOK)
 	}
 }
 
 /*
-  Token Authorization Handler
+	Token Authorization Handler
 */
 func TokenAuthorize() gin.HandlerFunc {
 	return func(ctx *gin.Context) {
@@ -140,17 +111,12 @@ func TokenAuthorize() gin.HandlerFunc {
 		session_id, err := auth.CreateSession(device_id, access_token, user_id)
 		if err != nil {
 			log.Println(err)
-			ctx.JSON(http.StatusInternalServerError, gin.H{
-				"result": "failed",
-				"error":  "Failed to create session.",
-			})
+			response.SetErrorResponse(ctx, http.StatusInternalServerError, response.ErrFailCreateSession)
 			return
 		}
 
-		ctx.JSON(http.StatusOK, gin.H{
-			"result":     "success",
-			"session_id": session_id,
-		})
+		property := gin.H { "session_id": session_id }
+		response.SetNormalResponse(ctx, http.StatusOK, response.ResultOK, property)
 	}
 }
 
@@ -168,37 +134,28 @@ func RefreshToken() gin.HandlerFunc {
 		device_id := token_info.DeviceID
 
 		if refresh_token != token_info.RefreshToken {
-			ctx.JSON(http.StatusNotAcceptable, gin.H {
-				"result": "failed",
-				"error":  "Invalid refresh token",
-			})
+			response.SetErrorResponse(ctx, http.StatusUnauthorized, response.ErrInvalidRefreshToken)
 			return
 		}
 				
 		new_token, new_refresh, err := auth.SetToken(token_info.UserID, token_info.DeviceID, token_info.PublicKey)
 		if err != nil {
-			ctx.JSON(http.StatusInternalServerError, gin.H {
-				"result": "failed",
-				"error": "something went wrong",
-			})
+			response.SetErrorResponse(ctx, http.StatusInternalServerError, response.ErrFailRefresh)
 			return
 		}
 
 		session_id, err := auth.CreateSession(device_id, new_token, user_id)
 		if err != nil {
 			log.Println(err)
-			ctx.JSON(http.StatusInternalServerError, gin.H{
-				"result": "failed",
-				"error":  "Failed to create session.",
-			})
+			response.SetErrorResponse(ctx, http.StatusInternalServerError, response.ErrFailCreateSession)
 			return
 		}
-			
-		ctx.JSON(http.StatusAccepted, gin.H {
-			"result": "refreshed",
+
+		property := gin.H {
 			"token": new_token,
 			"refresh_token": new_refresh,
 			"session_id": session_id,
-		})
+		}
+		response.SetNormalResponse(ctx, http.StatusOK, response.ResultRefreshSuccess, property)
 	}
 }

@@ -6,11 +6,12 @@ import (
 
 	"github.com/MISW/birdol-server/database"
 	"github.com/MISW/birdol-server/database/model"
+	"github.com/MISW/birdol-server/utils/response"
 	"github.com/gin-gonic/gin"
 )
 
 // to read session_id
-type ExtructSession struct {
+type ExtractSession struct {
 	SessionID string `json:"session_id"`
 }
 
@@ -23,10 +24,7 @@ func ReadSessionIDfromQuery() gin.HandlerFunc {
 		session_id := ctx.Query("session_id")
 
 		if !sessionValidityCheck(session_id, access_token) {
-			ctx.JSON(http.StatusUnauthorized, gin.H {
-				"result": "error",
-				"error": "login_needed",
-			})
+			response.SetErrorResponse(ctx, http.StatusUnauthorized, response.ErrNotLoggedIn)
 			ctx.Abort()
 			return
 		}
@@ -41,24 +39,18 @@ func ReadSessionIDfromBody() gin.HandlerFunc {
 		token_info := token_interface.(model.AccessToken)
 		access_token := token_info.Token
 
-		var extructor ExtructSession
+		var extractor ExtractSession
 		body_byte_interface, _ := ctx.Get("body_rawbyte")
 		body_rawbyte := body_byte_interface.([]byte)
-		if err := json.Unmarshal(body_rawbyte, &extructor); err != nil {
-			ctx.JSON(http.StatusInternalServerError, gin.H {
-				"result": "error",
-				"error": "something went wrong",
-			})
+		if err := json.Unmarshal(body_rawbyte, &extractor); err != nil {
+			response.SetErrorResponse(ctx, http.StatusInternalServerError, response.ErrFailParseJSON)
 			ctx.Abort()
 			return
 		}
-		session_id := extructor.SessionID
+		session_id := extractor.SessionID
 		
 		if !sessionValidityCheck(session_id, access_token) {
-			ctx.JSON(http.StatusUnauthorized, gin.H {
-				"result": "error",
-				"error": "login_needed",
-			})
+			response.SetErrorResponse(ctx, http.StatusUnauthorized, response.ErrNotLoggedIn)
 			ctx.Abort()
 			return
 		}
@@ -73,9 +65,5 @@ func sessionValidityCheck(session_id string, access_token string) bool {
 		return false
 	}
 
-	if session.Expired {
-		return false
-	}
-
-	return true
+	return !session.Expired
 }

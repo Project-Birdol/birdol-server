@@ -16,6 +16,7 @@ import (
 
 	"github.com/MISW/birdol-server/database"
 	"github.com/MISW/birdol-server/database/model"
+	"github.com/MISW/birdol-server/utils/response"
 	"github.com/gin-gonic/gin"
 )
 
@@ -40,10 +41,7 @@ func RequestValidation() gin.HandlerFunc {
 		// Verify Authorization Header
 		reg := regexp.MustCompile(`Bearer (.+)$`)
 		if !reg.MatchString(authorization) {
-			ctx.JSON(http.StatusUnauthorized, gin.H {
-				"result": "failed",
-				"error": "invalid_token",
-			})
+			response.SetErrorResponse(ctx, http.StatusUnauthorized, response.ErrAuthorizationFail)
 			ctx.Abort()
 			return
 		}
@@ -52,32 +50,23 @@ func RequestValidation() gin.HandlerFunc {
 		// confirm accesstoken
 		var recv_token model.AccessToken
 		if err := database.Sqldb.Where("token = ?", access_token).First(&recv_token).Error; err != nil {
-			ctx.JSON(http.StatusUnauthorized, gin.H {
-				"result": "failed",
-				"error":  "invalid_token",
-			})
+			response.SetErrorResponse(ctx, http.StatusUnauthorized, response.ErrInvalidToken)
 			ctx.Abort()
 			return
 		}
 
 		// confirm device id
 		if device_id != recv_token.DeviceID {
-			ctx.JSON(http.StatusUnauthorized, gin.H {
-				"result": "failed",
-				"error":  "invalid_DeviceID",
-			})
+			response.SetErrorResponse(ctx, http.StatusUnauthorized, response.ErrInvalidDevice)
 			ctx.Abort()
 			return
 		}
 
 		// Verify signature
 		encoded_xml_key := recv_token.PublicKey
-		public_key, err := mappingXML(encoded_xml_key)
+		public_key, err := parseXML(encoded_xml_key)
 		if err != nil {
-			ctx.JSON(http.StatusInternalServerError, gin.H {
-				"result": "failed",
-				"error": "something went wrong",
-			})
+			response.SetErrorResponse(ctx, http.StatusInternalServerError, response.ErrFailParseXML)
 			ctx.Abort()
 			return
 		}
@@ -95,10 +84,7 @@ func RequestValidation() gin.HandlerFunc {
 
 		verify_err := rsa.VerifyPKCS1v15(&public_key, crypto.SHA256, hashed_base[:], signature)
 		if verify_err != nil {
-			ctx.JSON(http.StatusNotAcceptable, gin.H {
-				"result": "failed",
-				"error":  "Invalid signature",
-			})
+			response.SetErrorResponse(ctx, http.StatusUnauthorized, response.ErrInvalidSignature)
 			ctx.Abort()
 			return
 		}
@@ -110,7 +96,7 @@ func RequestValidation() gin.HandlerFunc {
 }
 
 /*
-	private functions
+	Private functions
 */
 
 // decode base64 encoded string
@@ -134,7 +120,7 @@ func convertbigInt(str string) (*big.Int, error) {
 }
 
 // map PublicKey XML to rsa.PublicKey struct
-func mappingXML(str string) (rsa.PublicKey, error) {
+func parseXML(str string) (rsa.PublicKey, error) {
 	rawXML, _ := base64.StdEncoding.DecodeString(str)
 	rsaPublicKey := rsaPublicKey{}
 	if err := xml.Unmarshal([]byte(rawXML), &rsaPublicKey); err != nil {
