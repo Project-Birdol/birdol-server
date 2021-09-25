@@ -25,5 +25,5 @@ const (
 	ErrFailUnlink			= "fail_unlink"
 	ErrFailCreateSession	= "fail_create_session"
 	ErrInvalidRefreshToken	= "invalid_refresh_token"
-	ErrFailRefresh		= "fail_refresh"
+	ErrFailRefresh			= "fail_refresh"
 )

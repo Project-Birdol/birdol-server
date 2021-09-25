@@ -17,6 +17,15 @@ import (
 // 新規ユーザ登録
 func HandleSignUp() gin.HandlerFunc {
 	return func(ctx *gin.Context) {
+		log.SetPrefix("[SignUp] ")
+
+		content_type := ctx.GetHeader("Content-Type")
+		if content_type != gin.MIMEJSON {
+			response.SetErrorResponse(ctx, http.StatusBadRequest, response.ErrInvalidType)
+			ctx.Abort()
+			return
+		}
+
 		// parse json
 		var request_body jsonmodel.SignupUserRequest
 		if err := ctx.ShouldBindJSON(&request_body); err != nil {
@@ -76,7 +85,15 @@ func HandleSignUp() gin.HandlerFunc {
 // LinkAccount Login: account_idとpasswordで認証後にaccess tokenを発行する。 ゲーム内でのアカウント連携
 func LinkAccount() gin.HandlerFunc {
 	return func(ctx *gin.Context) {
-		log.SetPrefix("[Login] ")
+		log.SetPrefix("[DataLink] ")
+
+		content_type := ctx.GetHeader("Content-Type")
+		if content_type != gin.MIMEJSON {
+			response.SetErrorResponse(ctx, http.StatusBadRequest, response.ErrInvalidType)
+			ctx.Abort()
+			return
+		}
+
 		// parse json
 		var request_body jsonmodel.DataLinkRequest
 		if err := ctx.ShouldBindJSON(&request_body); err != nil {

@@ -39,6 +39,13 @@ func ReadSessionIDfromBody() gin.HandlerFunc {
 		token_info := token_interface.(model.AccessToken)
 		access_token := token_info.Token
 
+		content_type := ctx.GetHeader("Content-Type")
+		if content_type != gin.MIMEJSON {
+			response.SetErrorResponse(ctx, http.StatusBadRequest, response.ErrInvalidType)
+			ctx.Abort()
+			return
+		}
+
 		var extractor ExtractSession
 		body_byte_interface, _ := ctx.Get("body_rawbyte")
 		body_rawbyte := body_byte_interface.([]byte)
