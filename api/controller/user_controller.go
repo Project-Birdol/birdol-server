@@ -1,104 +1,139 @@
 package controller
 
 import (
+	"log"
+	"math/rand"
 	"net/http"
+	"time"
+
 	"github.com/MISW/birdol-server/auth"
 	"github.com/MISW/birdol-server/controller/jsonmodel"
 	"github.com/MISW/birdol-server/database"
 	"github.com/MISW/birdol-server/database/model"
+	"github.com/MISW/birdol-server/utils/response"
 	"github.com/gin-gonic/gin"
 )
 
-//新規ユーザ登録
+// 新規ユーザ登録
 func HandleSignUp() gin.HandlerFunc {
 	return func(ctx *gin.Context) {
-		//request data のjsonをstructにする
-		var json jsonmodel.SignupUserRequest
-		if err := ctx.ShouldBindJSON(&json); err != nil {
-			ctx.JSON(http.StatusBadRequest, gin.H{
-				"result": "failed",
-				"error":  "不適切なリクエストです",
-			})
+		log.SetPrefix("[SignUp] ")
+
+		content_type := ctx.GetHeader("Content-Type")
+		if content_type != gin.MIMEJSON {
+			response.SetErrorResponse(ctx, http.StatusBadRequest, response.ErrInvalidType)
+			ctx.Abort()
 			return
 		}
 
-		//request data に含まれるパスワードをハッシュ化する
-		if err := auth.HashString(&json.Password); err != nil {
-			ctx.JSON(http.StatusInternalServerError, gin.H{
-				"result": "failed",
-				"error":  "ユーザの新規作成に失敗しました",
-			})
+		// parse json
+		var request_body jsonmodel.SignupUserRequest
+		if err := ctx.ShouldBindJSON(&request_body); err != nil {
+			response.SetErrorResponse(ctx, http.StatusBadRequest, response.ErrFailParseJSON)
 			return
 		}
 
-		//登録しようとするユーザが既にいないか確認 (name)
-		var c_name int64
-		if err := database.Sqldb.Model(&model.User{}).Where("name = ?", json.Name).Select("id").Count(&c_name).Error; err != nil {
-			ctx.JSON(http.StatusInternalServerError, gin.H{
-				"result": "failed",
-				"error":  "ユーザの新規作成に失敗しました",
-			})
-			return
-		}
-		if c_name > 0 {
-			ctx.JSON(http.StatusBadRequest, gin.H{
-				"result": "failed",
-				"error":  "このユーザ名は既に使われています。",
-			})
+		// デフォルトのaccount_idを生成
+		account_id := generateRandomString(9)
+		
+		// ユーザ新規作成。保存
+		new_user := model.User{Name: request_body.Name, AccountID: account_id, LinkPassword: model.LinkPassword{ExpireDate: time.Now()}}
+		if err := database.Sqldb.Create(&new_user).Error; err != nil {
+			response.SetErrorResponse(ctx, http.StatusInternalServerError, response.ErrFailAccountCreation)
 			return
 		}
 
-		//登録しようとするユーザが既にいないか確認 (email)
-		var c_email int64
-		if err := database.Sqldb.Model(&model.User{}).Where("email = ?", json.Email).Select("id").Count(&c_email).Error; err != nil {
-			ctx.JSON(http.StatusInternalServerError, gin.H{
-				"result": "failed",
-				"error":  "ユーザの新規作成に失敗しました",
-			})
-			return
-		}
-		if c_email > 0 {
-			ctx.JSON(http.StatusBadRequest, gin.H{
-				"result": "failed",
-				"error":  "このメールアドレスは既に使われています。",
-			})
-			return
-		}
-
-		//ユーザ新規作成。保存
-		if err := database.Sqldb.Create(&model.User{Name: json.Name, Email: json.Email, Password: json.Password}).Error; err != nil {
-			ctx.JSON(http.StatusInternalServerError, gin.H{
-				"result": "failed",
-				"error":  "ユーザの新規作成に失敗しました",
-			})
-			return
-		}
-
-		//新規作成したユーザのIDを取得
-		var u model.User
-		if err := database.Sqldb.Where("name = ? AND email = ?", json.Name, json.Email).Select("id").Take(&u).Error; err != nil {
-			ctx.JSON(http.StatusInternalServerError, gin.H{
-				"result": "failed",
-				"error":  "ユーザの新規作成に失敗しました",
-			})
-			return
-		}
-
-		//アクセストークンを生成
-		token, err := auth.SetToken(u.ID, json.DeviceID)
+		// アクセストークンを生成
+		token, refresh_token, err := auth.SetToken(new_user.ID, request_body.DeviceID, request_body.PublicKey)
 		if err != nil {
-			ctx.JSON(http.StatusInternalServerError, gin.H{
-				"result": "failed",
-				"error":  "ユーザの新規作成に失敗しました",
-			})
+			response.SetErrorResponse(ctx, http.StatusInternalServerError, response.ErrFailAccountCreation)
 			return
 		}
 
-		//ユーザ新規登録成功!
-		ctx.JSON(http.StatusOK, gin.H{
-			"result":       "success",
+		// Successful
+		property := gin.H {
+			"user_id":       new_user.ID,
+			"access_token":  token,
+			"refresh_token": refresh_token,
+			"account_id":    account_id,
+		}
+		response.SetNormalResponse(ctx, http.StatusOK, response.ResultOK, property)
+	}
+}
+
+// LinkAccount Login: account_idとpasswordで認証後にaccess tokenを発行する。 ゲーム内でのアカウント連携
+func LinkAccount() gin.HandlerFunc {
+	return func(ctx *gin.Context) {
+		log.SetPrefix("[DataLink] ")
+
+		content_type := ctx.GetHeader("Content-Type")
+		if content_type != gin.MIMEJSON {
+			response.SetErrorResponse(ctx, http.StatusBadRequest, response.ErrInvalidType)
+			ctx.Abort()
+			return
+		}
+
+		// parse json
+		var request_body jsonmodel.DataLinkRequest
+		if err := ctx.ShouldBindJSON(&request_body); err != nil {
+			log.Println(err)
+			response.SetErrorResponse(ctx, http.StatusBadRequest, response.ErrFailParseJSON)
+			return
+		}
+
+		// account_idが合っているかを確認。そのaccount_idでdatabaseからデータ取得
+		var u model.User
+		if err := database.Sqldb.Where("account_id = ?", request_body.AccountID).Take(&u).Error; err != nil {
+			log.Println(err)
+			response.SetErrorResponse(ctx, http.StatusNotFound, response.ErrInvalidAccount)
+			return
+		}
+
+		// expire check
+		now := time.Now()
+		if now.After(u.LinkPassword.ExpireDate) {
+			response.SetErrorResponse(ctx, http.StatusUnauthorized, response.ErrPasswordExpire)
+			return
+		}
+
+		// passwordが合っているかHash値を比較
+		if err := auth.CompareHashedString(u.LinkPassword.Password, request_body.Password); err != nil {
+			log.Println(err)
+			response.SetErrorResponse(ctx, http.StatusUnauthorized, response.ErrInvalidPassword)
+			return
+		}
+
+		// disable used password
+		if err := database.Sqldb.Model(&model.User{}).Where("id = ?", u.ID).Update("expire_date", time.Now()).Error; err != nil {
+			log.Println(err)
+			response.SetErrorResponse(ctx, http.StatusInternalServerError, response.ErrFailDataLink)
+			return
+		}
+
+		// access token の生成及び保存
+		token, refresh_token, err := auth.SetToken(u.ID, request_body.DeviceID, request_body.PublicKey)
+		if err != nil {
+			log.Println(err)
+			response.SetErrorResponse(ctx, http.StatusInternalServerError, response.ErrFailDataLink)
+			return
+		}
+
+		// response
+		property := gin.H {
 			"user_id":      u.ID,
 			"access_token": token,
-		})
+			"refresh_token": refresh_token,
+		}
+		response.SetNormalResponse(ctx, http.StatusOK, response.ResultOK, property)
 	}
+}
+
+func generateRandomString(length int) string {
+	const charas = "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789"
+	clen := len(charas)
+	r := make([]byte, length)
+	for i := range r {
+		r[i] = charas[rand.Intn(clen)]
+	}
+	return string(r)
 }
