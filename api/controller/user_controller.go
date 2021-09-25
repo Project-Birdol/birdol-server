@@ -34,29 +34,8 @@ func HandleSignUp() gin.HandlerFunc {
 		}
 
 		// デフォルトのaccount_idを生成
-		i := 0
-		account_id := generateRandomString(64)
-		for {
-			// 生成失敗
-			i++
-			if i > 100 {
-				log.Printf("failed to create account id.")
-				response.SetErrorResponse(ctx, http.StatusInternalServerError, response.ErrFailAccountCreation)
-				return
-			}
-
-			// 重複チェック
-			var c_account_id int64
-			if err := database.Sqldb.Model(&model.User{}).Where("account_id = ?", account_id).Select("id").Count(&c_account_id).Error; err != nil {
-				response.SetErrorResponse(ctx, http.StatusInternalServerError, response.ErrFailAccountCreation)
-				return
-			}
-			if c_account_id == 0 {
-				break
-			}
-			account_id = generateRandomString(64)
-		}
-
+		account_id := generateRandomString(9)
+		
 		// ユーザ新規作成。保存
 		new_user := model.User{Name: request_body.Name, AccountID: account_id, LinkPassword: model.LinkPassword{ExpireDate: time.Now()}}
 		if err := database.Sqldb.Create(&new_user).Error; err != nil {
