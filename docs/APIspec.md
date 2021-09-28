@@ -26,9 +26,9 @@
     ```json
     # SAMPLE
     {
-        "name": <-- ユーザー名 -->,
-        "public_key": <-- RSA公開鍵(base64 encoded XML) -->,
-        "device_id": <-- Client's UUID -->
+        "name": "<-- ユーザー名 -->",
+        "public_key": "<-- RSA公開鍵(base64 encoded XML) -->",
+        "device_id": "<-- Client's UUID -->"
     }
     ```
 - **Response**: 
@@ -62,10 +62,10 @@
     ```json
     # SAMPLE
     {
-        "account_id": <-- ユーザーID -->,
-        "password": <-- パスワード -->,
-        "device_id": <-- Client's UUID -->,
-        "public_key": <-- RSA公開鍵(base64 encoded XML) -->
+        "account_id": "<-- ユーザーID -->",
+        "password": "<-- パスワード -->",
+        "device_id": "<-- Client's UUID -->",
+        "public_key": "<-- RSA公開鍵(base64 encoded XML) -->"
     }
     ```
 - **Response**:
@@ -77,7 +77,7 @@
     ```json
     # SAMPLE
     {
-        "result": "success",
+        "result": "ok",
         "user_id": 102,
         "access_token" : "z9sfho*^$dck$jc@v"
         "refresh_token" : "3js9&bd%aszlx#hxo$"
@@ -188,6 +188,5 @@ AccessTokenを使用するすべてのリクエストは，端末登録時に生
 おそらくタイトル画面からホーム画面に遷移する段階でだと思うが，アクセストークンを使用して簡易的な[ログイン処理](#ログイン処理)のようなものをしてもらう．（クライアント側でGETリクエストを投げるだけ）
 
 このとき，レスポンスでセッションIDが返ってくるので，ログイン後のAPIアクセスの際はbodyかheaderに必ずこれをつける
-- GETリクエストの存在を考えると，headerへの付加で統一したい感もあるが，これ以上headerに独自パラメータを増やしたくない感もある･･･
-
-セッションの検証部分は未実装
+- ボディのないリクエストはクエリパラメータに `?session_id=xxxxxx` を入れる
+- ボディがあるリクエストはボディに `session_id` をいれる
