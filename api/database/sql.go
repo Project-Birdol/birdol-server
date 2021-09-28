@@ -68,3 +68,22 @@ func SqlConnect() {
 	log.Println("DB Connected")
 	Sqldb = db
 }
+
+func TestingDatabase() {
+	MigrateDB()
+
+	USER := os.Getenv("DB_USER")
+	PASS := os.Getenv("DB_PASSWORD")
+	DBNAME := os.Getenv("DB_NAME")
+	DBADRESS := os.Getenv("DB_ADDRESS")
+	PROTOCOL := "tcp(" + DBADRESS + ":3306)"
+	CONNECT := USER + ":" + PASS + "@" + PROTOCOL + "/" + DBNAME + "?charset=utf8&parseTime=true"
+	db, err := gorm.Open(mysql.Open(CONNECT), &gorm.Config{
+		Logger: logger.Default.LogMode(logger.Silent),
+	})
+	if err != nil {
+	  panic(err)
+	}
+	log.Println("DB Connected")
+	Sqldb = db
+}
