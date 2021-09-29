@@ -2,7 +2,6 @@ package controller
 
 import (
 	"log"
-	"math/rand"
 	"net/http"
 	"time"
 
@@ -11,6 +10,7 @@ import (
 	"github.com/MISW/birdol-server/database"
 	"github.com/MISW/birdol-server/database/model"
 	"github.com/MISW/birdol-server/utils/response"
+	"github.com/MISW/birdol-server/utils/random"
 	"github.com/gin-gonic/gin"
 )
 
@@ -34,7 +34,11 @@ func HandleSignUp() gin.HandlerFunc {
 		}
 
 		// デフォルトのaccount_idを生成
-		account_id := generateRandomString(9)
+		account_id, err := random.GenerateRandomString(9)
+		if err != nil {
+			response.SetErrorResponse(ctx, http.StatusInternalServerError, response.ErrFailAccountCreation)
+			return
+		}
 		
 		// ユーザ新規作成。保存
 		new_user := model.User{Name: request_body.Name, AccountID: account_id, LinkPassword: model.LinkPassword{ExpireDate: time.Now()}}
@@ -126,14 +130,4 @@ func LinkAccount() gin.HandlerFunc {
 		}
 		response.SetNormalResponse(ctx, http.StatusOK, response.ResultOK, property)
 	}
-}
-
-func generateRandomString(length int) string {
-	const charas = "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789"
-	clen := len(charas)
-	r := make([]byte, length)
-	for i := range r {
-		r[i] = charas[rand.Intn(clen)]
-	}
-	return string(r)
 }
