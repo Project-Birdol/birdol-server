@@ -1,12 +1,12 @@
 package auth
 
 import (
-	"crypto/rand"
 	"log"
-	"math/big"
 	"time"
+
 	"github.com/MISW/birdol-server/database"
 	"github.com/MISW/birdol-server/database/model"
+	"github.com/MISW/birdol-server/utils/random"
 	"gorm.io/gorm"
 	"gorm.io/gorm/clause"
 )
@@ -22,13 +22,13 @@ const (
 func SetToken(userID uint, device_id string, public_key string) (string, string, error) {
 
 	// create rondom token id
-	token, err := generateRandomString(tokenIDsize)
+	token, err := random.GenerateRandomString(tokenIDsize)
 	if err != nil {
 		log.Println("failed to generate rondom string:", err)
 		return "", "", err
 	}
 
-	refresh_token, err := generateRandomString(refreshTokenSize)
+	refresh_token, err := random.GenerateRandomString(tokenIDsize)
 	if err != nil {
 		log.Println("failed to generate rondom string:", err)
 		return "", "", err
@@ -70,21 +70,6 @@ func DeleteToken(token string, device_id string) error {
 	}
 
 	return nil
-}
-
-// generateRandomString generate random string as access token
-func generateRandomString(size int) (string, error) {
-	const letters = "0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz"
-	r := make([]byte, size)
-	for i := 0; i < size; i++ {
-		num, err := rand.Int(rand.Reader, big.NewInt(int64(len(letters))))
-		if err != nil {
-			return "", err
-		}
-		r[i] = letters[num.Int64()]
-	}
-
-	return string(r), nil
 }
 
 // StartDeleteExpiredTokens delete tokens if they are expired
