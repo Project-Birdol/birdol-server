@@ -23,17 +23,16 @@ jobs:
 
       - name: Build Docker image and run docker container
         run: docker-compose -f docker-compose.yml -f docker-compose.test.yml up -d
-
-      - name: Move to CI directory
-        run: cd ./ci_tool
         
       - name: Give permission to executables for test
         run: |
           sudo chmod +x ./newman_ci.sh
           sudo chmod +x ./rsa-sign/signing-cs
+        working-directory: ./ci_test
         
       - name: Sleep to wait for preparing of containers
-        run: sleep 60
+        run: sleep 30
         
       - name: Run test shell script
         run: ./newman_ci.sh
+        working-directory: ./ci_test
