@@ -13,7 +13,7 @@ func main() {
 	// アクセストークンの定期的な削除をする
 	// auth.StartDeleteExpiredTokens()
 
-	mode := os.Getenv("MODE")
+	mode := os.Getenv("GIN_MODE")
 
 	// ルーティング設定
 	var router *gin.Engine
@@ -25,7 +25,7 @@ func main() {
 	}
 	
 	PORT := ":80"
-	if mode == "production" {
+	if mode == "release" {
 		log.Println("Running in Production mode.")
 	} else {
 		log.Println("Running in Development mode.")
