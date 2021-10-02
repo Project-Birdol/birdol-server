@@ -28,7 +28,7 @@ jobs:
           context: .
           file: Dockerfile
           target: production
-          tags: ${{ $REGISTORY }}/birdol/web
+          tags: ${{ secrets.REGISTORY }}/birdol/web
 
       - name: Release
         run: |
