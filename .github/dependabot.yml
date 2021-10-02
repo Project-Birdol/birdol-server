@@ -1,0 +1,11 @@
+version: 2
+updates:
+  - package-ecosystem: "gomod"
+    directory: "/api"
+    schedule:
+      interval: "daily"
+      time: "14:00"
+      timezone: "Asia/Tokyo"
+    labels: 
+      - "dependencies"
+      - "go modules"
