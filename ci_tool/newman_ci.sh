@@ -5,6 +5,12 @@
 #  [Dependencies]: nodejs, newman, jq
 # ======================================
 
+function clean() {
+    echo "Cleaning..."
+    rm environment_tmp.json ./rsa-sign/keyfile/*
+    return 0
+}
+
 # Generate RSA Key
 echo "Generating RSA Key..."
 PUBKEY_A=`./rsa-sign/signing-cs gen rsa-sign/keyfile/key-a`
@@ -22,7 +28,8 @@ newman run collection.json -e environment.json --folder CreateAccount --env-var 
 
 if [ $? -ne 0 ]; then
     echo "Fail: Test 1"
-    exit 
+    clean
+    exit 1
 fi
 
 # Run Test 2: LoginWithToken - DeviceA
@@ -32,8 +39,9 @@ SIG=`./rsa-sign/signing-cs sign "v2:$TS:" rsa-sign/keyfile/key-a.xml`
 newman run collection.json -e environment_tmp.json --folder LoginWithToken --env-var "SIGNATURE=$SIG" --env-var "TIMESTAMP=$TS" --export-environment environment_tmp.json
 
 if [ $? -ne 0 ]; then
-echo "Fail: Test 2"
-    exit
+    echo "Fail: Test 2"
+    clean
+    exit 1
 fi
 
 # Run Test 3: SetDataLink - DeviceA
@@ -48,7 +56,8 @@ newman run collection.json -e environment_tmp.json --folder SetDataLink --env-va
 
 if [ $? -ne 0 ]; then
     echo "Fail: Test 3"
-    exit
+    clean
+    exit 1
 fi
 
 # Run Test 4: Refresh Token - DeviceA
@@ -59,7 +68,8 @@ newman run collection.json -e environment_tmp.json --folder RefreshToken --env-v
 
 if [ $? -ne 0 ]; then
     echo "Fail: Test 4"
-    exit
+    clean
+    exit 1
 fi
 
 # Run Test 5: AccountLink - DeviceB
@@ -67,7 +77,8 @@ newman run collection.json -e environment_tmp.json --folder AccountLink --env-va
 
 if [ $? -ne 0 ]; then
     echo "Fail: Test 5"
-    exit
+    clean
+    exit 1
 fi
 
 # Run Test 6: LoginWithToken - DeviceB
@@ -78,7 +89,8 @@ newman run collection.json -e environment_tmp.json --folder LoginWithTokenB --en
 
 if [ $? -ne 0 ]; then
     echo "Fail: Test 6"
-    exit
+    clean
+    exit 1
 fi
 
 # Run Test 7: SetDataLink - DeviceB
@@ -93,7 +105,8 @@ newman run collection.json -e environment_tmp.json --folder SetDataLinkB --env-v
 
 if [ $? -ne 0 ]; then
     echo "Fail: Test 7"
-    exit
+    clean
+    exit 1
 fi
 
 # Run Test 8: Refresh Token - DeviceB
@@ -104,9 +117,9 @@ newman run collection.json -e environment_tmp.json --folder RefreshTokenB --env-
 
 if [ $? -ne 0 ]; then
     echo "Fail: Test 8"
-    exit
+    clean
+    exit 1
 fi
 
 echo "All test passed."
-echo "Cleaning..."
-rm environment_tmp.json ./rsa-sign/keyfile/*
+clean

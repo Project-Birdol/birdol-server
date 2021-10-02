@@ -57,10 +57,11 @@
 									}
 								},
 								"url": {
-									"raw": "localhost/api/v2/user",
+									"raw": "localhost:8080/api/v2/user",
 									"host": [
 										"localhost"
 									],
+									"port": "8080",
 									"path": [
 										"api",
 										"v2",
@@ -124,10 +125,11 @@
 									}
 								],
 								"url": {
-									"raw": "localhost/api/v2/auth",
+									"raw": "localhost:8080/api/v2/auth",
 									"host": [
 										"localhost"
 									],
+									"port": "8080",
 									"path": [
 										"api",
 										"v2",
@@ -198,10 +200,11 @@
 									}
 								},
 								"url": {
-									"raw": "localhost/api/v2/auth",
+									"raw": "localhost:8080/api/v2/auth",
 									"host": [
 										"localhost"
 									],
+									"port": "8080",
 									"path": [
 										"api",
 										"v2",
@@ -271,10 +274,11 @@
 									}
 								],
 								"url": {
-									"raw": "localhost/api/v2/auth/refresh?refresh_token={{REF_TOKEN_A}}",
+									"raw": "localhost:8080/api/v2/auth/refresh?refresh_token={{REF_TOKEN_A}}",
 									"host": [
 										"localhost"
 									],
+									"port": "8080",
 									"path": [
 										"api",
 										"v2",
@@ -337,10 +341,11 @@
 									}
 								},
 								"url": {
-									"raw": "localhost/api/v2/user",
+									"raw": "localhost:8080/api/v2/user",
 									"host": [
 										"localhost"
 									],
+									"port": "8080",
 									"path": [
 										"api",
 										"v2",
@@ -404,10 +409,11 @@
 									}
 								],
 								"url": {
-									"raw": "localhost/api/v2/auth",
+									"raw": "localhost:8080/api/v2/auth",
 									"host": [
 										"localhost"
 									],
+									"port": "8080",
 									"path": [
 										"api",
 										"v2",
@@ -478,10 +484,11 @@
 									}
 								},
 								"url": {
-									"raw": "localhost/api/v2/auth",
+									"raw": "localhost:8080/api/v2/auth",
 									"host": [
 										"localhost"
 									],
+									"port": "8080",
 									"path": [
 										"api",
 										"v2",
@@ -551,10 +558,11 @@
 									}
 								],
 								"url": {
-									"raw": "localhost/api/v2/auth/refresh?refresh_token={{REF_TOKEN_B}}",
+									"raw": "localhost:8080/api/v2/auth/refresh?refresh_token={{REF_TOKEN_B}}",
 									"host": [
 										"localhost"
 									],
+									"port": "8080",
 									"path": [
 										"api",
 										"v2",
