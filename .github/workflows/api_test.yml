@@ -1,0 +1,39 @@
+name: API_test
+on:
+  push:
+    branches: [ main ]
+  pull_request:
+    branches: [ main ]
+
+  workflow_dispatch:
+
+jobs:
+  integration:
+    name: Integration test with newman
+    runs-on: ubuntu-latest
+    steps:
+      - name: Setup newman
+        run: sudo npm install -g newman
+        
+      - name: Setup jq
+        run: sudo apt install jq
+        
+      - name: Checkout
+        uses: actions/checkout@v2
+
+      - name: Build Docker image and run docker container
+        run: docker-compose -f docker-dompose.yml -f docker-compose.test.yml up -d
+
+      - name: Move to CI directory
+        run: cd ./ci_tool
+        
+      - name: Give permission to executables for test
+        run: |
+          sudo chmod +x ./newman_ci.sh
+          sudo chmod +x ./rsa-sign/signing-cs
+        
+      - name: Sleep to wait for preparing of containers
+        run: sleep 60
+        
+      - name: Run test shell script
+        run: ./newman_ci.sh
