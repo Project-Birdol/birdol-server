@@ -19,7 +19,7 @@ jobs:
         env:
           USERNAME: ${{ secrets.REGISTORY_UNAME }}
           PASSWORD: ${{ secrets.REGISTORY_PASSWORD }}
-          REGISTORY: ${{ secrets.RESIGTORY }}
+          REGISTORY: ${{ secrets.REGISTORY }}
       
       - name: build and push image
         uses: docker/build-push-action@v2
