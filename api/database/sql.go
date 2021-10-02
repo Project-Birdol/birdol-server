@@ -70,8 +70,6 @@ func SqlConnect() {
 }
 
 func TestingDatabase() {
-	MigrateDB()
-
 	USER := os.Getenv("DB_USER")
 	PASS := os.Getenv("DB_PASSWORD")
 	DBNAME := os.Getenv("DB_NAME")
@@ -86,4 +84,5 @@ func TestingDatabase() {
 	}
 	log.Println("DB Connected")
 	Sqldb = db
+	MigrateDB()
 }
