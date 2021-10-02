@@ -28,11 +28,11 @@ jobs:
         run: |
           sudo chmod +x ./newman_ci.sh
           sudo chmod +x ./rsa-sign/signing-cs
-        working-directory: ./ci_test
+        working-directory: ./ci_tool
         
       - name: Sleep to wait for preparing of containers
         run: sleep 30
         
       - name: Run test shell script
         run: ./newman_ci.sh
-        working-directory: ./ci_test
+        working-directory: ./ci_tool
