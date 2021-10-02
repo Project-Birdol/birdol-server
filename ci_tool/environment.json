@@ -1,0 +1,84 @@
+{
+	"id": "073f0a98-3242-45fd-89c9-43313483a160",
+	"name": "birdol-user-A",
+	"values": [
+		{
+			"key": "PUBLIC_KEY_A",
+			"value": "",
+			"enabled": true
+		},
+		{
+			"key": "DEVICE_ID_A",
+			"value": "",
+			"enabled": true
+		},
+		{
+			"key": "TOKEN_A",
+			"value": "",
+			"enabled": true
+		},
+		{
+			"key": "ACC_ID",
+			"value": "",
+			"enabled": true
+		},
+		{
+			"key": "REF_TOKEN_A",
+			"value": "",
+			"enabled": true
+		},
+		{
+			"key": "USER_ID",
+			"value": "",
+			"enabled": true
+		},
+		{
+			"key": "SESSION_A",
+			"value": "",
+			"enabled": true
+		},
+		{
+			"key": "LINK_PASSWORD",
+			"value": "testpass",
+			"enabled": true
+		},
+		{
+			"key": "PUBLIC_KEY_B",
+			"value": "",
+			"enabled": true
+		},
+		{
+			"key": "DEVICE_ID_B",
+			"value": "",
+			"enabled": true
+		},
+		{
+			"key": "TOKEN_B",
+			"value": "",
+			"enabled": true
+		},
+		{
+			"key": "REF_TOKEN_B",
+			"value": "",
+			"enabled": true
+		},
+		{
+			"key": "SESSION_B",
+			"value": "",
+			"enabled": true
+		},
+		{
+			"key": "SIGNATURE",
+			"value": "",
+			"enabled": true
+		},
+		{
+			"key": "TIMESTAMP",
+			"value": "",
+			"enabled": true
+		}
+	],
+	"_postman_variable_scope": "environment",
+	"_postman_exported_at": "2021-10-02T08:19:24.225Z",
+	"_postman_exported_using": "Postman/9.0.3"
+}
