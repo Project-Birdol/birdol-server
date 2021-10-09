@@ -7,6 +7,7 @@ jobs:
   deploy:
     name: push docker image to registry
     runs-on: ubuntu-latest
+    timeout-minutes: 10
     steps:
       - name: Checkout
         uses: actions/checkout@v2
@@ -35,11 +36,10 @@ jobs:
           images: |
             ${{ secrets.REGISTRY }}/birdol/web
             ${{ secrets.MISW_REGISTRY }}/birdol/web
-          flavors: |
-            latest=true
           tags: |
             type=ref,event=branch
             type=sha
+            type=raw,value=latest
 
       - name: build and push image
         uses: docker/build-push-action@v2
