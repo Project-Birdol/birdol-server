@@ -3,9 +3,9 @@ package model
 type StoryProgress struct
 {
 	Model
-	UserId uint	`json:"user_id"`
-	MainStoryId uint	`json:"main_story_id"`
+	UserId uint	`json:"-"`
+	MainStoryId string	`json:"main_story_id"`
 	Completed bool	`json:"-"`
-    CharacterProgresses []CharacterProgress `gorm:"foreignKey:StoryProgressId" json:"character_progresses"`
-	Teachers []Teacher `gorm:"foreignKey:StoryProgressId" json:"teachers"`
+    CharacterProgresses []CharacterProgress `gorm:"foreignKey:StoryProgressId" json:"-"`
+	Teachers []Teacher `gorm:"foreignKey:StoryProgressId" json:"-"`
 }
