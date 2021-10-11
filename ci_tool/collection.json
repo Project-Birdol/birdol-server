@@ -49,7 +49,7 @@
 								"header": [],
 								"body": {
 									"mode": "raw",
-									"raw": "{\r\n    \"name\": \"キリト\",\r\n    \"public_key\": \"{{PUBLIC_KEY_A}}\",\r\n    \"device_id\": \"{{DEVICE_ID_A}}\"\r\n}",
+									"raw": "{\r\n    \"name\": \"キリト\",\r\n    \"public_key\": \"{{PUBLIC_KEY_A}}\",\r\n    \"device_id\": \"{{DEVICE_ID_A}}\",\r\n    \"completed_progresses\": [{\"id\":0,\"MainCharacterId\":0,\"Name\":\"スズメ\",\"Visual\":2.0,\"Vocal\":2.0,\"Dance\":2.0,\"BestSkill\":\"\",\"ActiveSkillLevel\":1,\"ActiveSkillType\":\"\",\"ActiveSkillScore\":0.0,\"MainStoryId\":0,\"SupportCharacterId\":0,\"PassiveSkillLevel\":1,\"PassiveSkillType\":\"\",\"PassiveSkillScore\":0.0},{\"id\":0,\"MainCharacterId\":1,\"Name\":\"ハシボソガラス\",\"Visual\":1.0,\"Vocal\":1.0,\"Dance\":2.0,\"BestSkill\":\"\",\"ActiveSkillLevel\":1,\"ActiveSkillType\":\"\",\"ActiveSkillScore\":0.0,\"MainStoryId\":0,\"SupportCharacterId\":1,\"PassiveSkillLevel\":1,\"PassiveSkillType\":\"\",\"PassiveSkillScore\":0.0},{\"id\":0,\"MainCharacterId\":2,\"Name\":\"ムクドリ\",\"Visual\":2.0,\"Vocal\":1.0,\"Dance\":1.0,\"BestSkill\":\"\",\"ActiveSkillLevel\":1,\"ActiveSkillType\":\"\",\"ActiveSkillScore\":0.0,\"MainStoryId\":0,\"SupportCharacterId\":2,\"PassiveSkillLevel\":1,\"PassiveSkillType\":\"\",\"PassiveSkillScore\":0.0},{\"id\":0,\"MainCharacterId\":3,\"Name\":\"キジバト\",\"Visual\":1.0,\"Vocal\":2.0,\"Dance\":1.0,\"BestSkill\":\"\",\"ActiveSkillLevel\":1,\"ActiveSkillType\":\"\",\"ActiveSkillScore\":0.0,\"MainStoryId\":0,\"SupportCharacterId\":3,\"PassiveSkillLevel\":1,\"PassiveSkillType\":\"\",\"PassiveSkillScore\":0.0}]\r\n}",
 									"options": {
 										"raw": {
 											"language": "json"
