@@ -14,7 +14,7 @@ COPY . .
 
 RUN GOOS=linux GOARCH=amd64 go build -o /main
 
-FROM alpine:3.9
+FROM alpine:3.9 as production
 
 COPY --from=builder /main .
 

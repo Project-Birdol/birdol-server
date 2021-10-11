@@ -12,7 +12,6 @@ import (
 	"net/http"
 	"os"
 	"regexp"
-	"strings"
 	"github.com/MISW/birdol-server/database"
 	"github.com/MISW/birdol-server/database/model"
 	"github.com/MISW/birdol-server/utils/response"
@@ -73,8 +72,6 @@ func RequestValidation() gin.HandlerFunc {
 		request_body := string(body_byte)
 
 		prefix := os.Getenv("API_VERSION")
-		replacer := strings.NewReplacer("\r\n", "\n")
-		request_body = replacer.Replace(request_body)
 		signature_base := prefix + ":" + timestamp + ":" + request_body
 		hashed_base := sha256.Sum256([]byte(signature_base))
 		signature, _ := hex.DecodeString(signature_str)
