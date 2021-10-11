@@ -56,8 +56,9 @@ func GetCurrentCharacters() gin.HandlerFunc {
 	return func(ctx *gin.Context) {
 		accessToken , _ := ctx.Get("access_token")
 		userid := accessToken.(model.AccessToken).UserID
-		var response jsonmodel.CharacterResponse
-		if err := database.Sqldb.Model(&model.CharacterProgress{}).Where("user_id = ? && completed = ?", userid,false).Preload("CharacterProgresses").Preload("Teachers").Preload("Teachers.Character").Last(&response).Error; err != nil {
+		response := &jsonmodel.CharacterResponse{}
+		var story model.StoryProgress
+		if err := database.Sqldb.Model(&model.StoryProgress{}).Where("user_id = ? && completed = ?", userid,false).Preload("CharacterProgresses").Preload("Teachers").Preload("Teachers.Character").Last(&story).Error; err != nil {
 			log.Println(err)
 			ctx.JSON(http.StatusBadRequest, gin.H{
 				"result": "failed",
@@ -65,6 +66,8 @@ func GetCurrentCharacters() gin.HandlerFunc {
 			})
 			return
 		}
+		response.CharacterProgresses = story.CharacterProgresses 
+		response.Teachers = story.Teachers
 		response.Result = "success"
 		ctx.JSON(http.StatusOK, response)
 	}
@@ -121,7 +124,7 @@ func FinishProgress() gin.HandlerFunc {
 			return
 		}
 		var characters []model.CompletedProgress
-		if err := database.Sqldb.Model(&model.CharacterProgress{}).Select("main_character_id","name","visual","vocal","dance","active_skill_level","active_skill_type","active_skill_score","support_character_id","passive_skill_level","passive_skill_type","passive_skill_score").Where("story_progress_id = ?", story.ID).Find(&characters).Error; err != nil {
+		if err := database.Sqldb.Model(&model.CharacterProgress{}).Select("main_character_id","name","visual","vocal","dance","active_skill_level","support_character_id","passive_skill_level").Where("story_progress_id = ?", story.ID).Find(&characters).Error; err != nil {
 			log.Println(err)
 			ctx.JSON(http.StatusInternalServerError, gin.H{
 				"result": "failed",
@@ -147,18 +150,23 @@ func UpdateCharacters() gin.HandlerFunc {
 	return func(ctx *gin.Context) {
 		// 育成進捗サブシナリオのステータスの更新
 		var request jsonmodel.CharacterProgressRequest
-		if err := ctx.ShouldBindJSON(&request); err != nil{
+		body_byte_interface, _ := ctx.Get("body_rawbyte")
+		body_rawbyte := body_byte_interface.([]byte)
+		if err := json.Unmarshal(body_rawbyte, &request); err != nil{
 			ctx.JSON(http.StatusBadRequest, gin.H{
 				"result": "failed",
 				"error":  "不適切なリクエストです",
 			})
 			return
 		}
-		if err := database.Sqldb.Model(&model.CharacterProgress{}).Updates(request.CharacterProgresses).Error; err != nil{
-			ctx.JSON(http.StatusOK, gin.H {
-				"result": "failed",
-				"error":  "データの更新に失敗しました",
-			})
+		for _ , v := range request.CharacterProgresses {
+			if err := database.Sqldb.Model(&model.CharacterProgress{}).Where("id = ?", v.ID).Updates(&v).Error; err != nil{
+				ctx.JSON(http.StatusOK, gin.H {
+					"result": "failed",
+					"error":  "データの更新に失敗しました",
+				})
+				return
+			}
 		}
 		ctx.JSON(http.StatusOK, gin.H {
 			"result": "success",
@@ -180,12 +188,12 @@ func UpdateMainStory() gin.HandlerFunc {
 			})
 			return
 		}
-		log.Println(request.ID)
 		if err := database.Sqldb.Model(&model.StoryProgress{}).Where("user_id = ? && completed = ?", userid,false).Updates(&request).Error; err != nil{
 			ctx.JSON(http.StatusOK, gin.H {
 				"result": "failed",
 				"error":  "データの更新に失敗しました",
 			})
+			return
 		}
 		ctx.JSON(http.StatusOK, gin.H {
 			"result": "success",
