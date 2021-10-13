@@ -6,6 +6,7 @@ import (
 	"github.com/MISW/birdol-server/controller/jsonmodel"
 	"github.com/MISW/birdol-server/database"
 	"github.com/MISW/birdol-server/database/model"
+	res_util "github.com/MISW/birdol-server/utils/response"
 	"github.com/gin-gonic/gin"
 	"errors"
 	"encoding/json"
@@ -18,17 +19,14 @@ func GetGalleryInfo() gin.HandlerFunc {
 		var ids []jsonmodel.GalleryChild
 		if err := database.Sqldb.Model(&model.CompletedProgress{}).Select("main_character_id").Where("user_id = ?", userid).Group("main_character_id").Order("main_character_id").Find(&ids).Error; err != nil {
 			log.Println(err)
-			ctx.JSON(http.StatusBadRequest, gin.H{
-				"result": "failed",
-				"error":  "該当する進捗が見つかりません",
-			})
+			res_util.SetErrorResponse(ctx, http.StatusBadRequest, res_util.ErrDataNotFound)
 			return
 		}
-		response := new(jsonmodel.GalleryResponse)
-		response.Result = "success"
-		response.Birdols = ids
-		ctx.JSON(http.StatusOK, response)
-		
+
+		response := jsonmodel.GalleryResponse {
+			Birdols: ids,
+		}
+		res_util.SetStructResponse(ctx, http.StatusOK, res_util.ResultOK, response)
 	}
 }
 
@@ -39,16 +37,14 @@ func GetCompletedCharacters() gin.HandlerFunc {
 		var characters []model.CompletedProgress
 		if err := database.Sqldb.Model(&model.CompletedProgress{}).Where("user_id = ?", userid).Find(&characters).Error; err != nil {
 			log.Println(err)
-			ctx.JSON(http.StatusBadRequest, gin.H{
-				"result": "failed",
-				"error":  "該当する進捗が見つかりません",
-			})
+			res_util.SetErrorResponse(ctx, http.StatusBadRequest, res_util.ErrDataNotFound)
 			return
 		}
-		response := new(jsonmodel.DendouResponse)
-		response.Result = "success"
-		response.Characters = characters
-		ctx.JSON(http.StatusOK, response)
+
+		response := jsonmodel.HallOfFameResponse {
+			Characters: characters,
+		}
+		res_util.SetStructResponse(ctx, http.StatusOK, res_util.ResultOK, response)
 	}
 }
 
@@ -56,20 +52,19 @@ func GetCurrentCharacters() gin.HandlerFunc {
 	return func(ctx *gin.Context) {
 		accessToken , _ := ctx.Get("access_token")
 		userid := accessToken.(model.AccessToken).UserID
-		response := &jsonmodel.CharacterResponse{}
+		
 		var story model.StoryProgress
-		if err := database.Sqldb.Model(&model.StoryProgress{}).Where("user_id = ? && completed = ?", userid,false).Preload("CharacterProgresses").Preload("Teachers").Preload("Teachers.Character").Last(&story).Error; err != nil {
+		if err := database.Sqldb.Where("user_id = ? && completed = ?", userid,false).Preload("CharacterProgresses").Preload("Teachers").Preload("Teachers.Character").Last(&story).Error; err != nil {
 			log.Println(err)
-			ctx.JSON(http.StatusBadRequest, gin.H{
-				"result": "failed",
-				"error":  "該当する進捗が見つかりません",
-			})
+			res_util.SetErrorResponse(ctx, http.StatusBadRequest, res_util.ErrDataNotFound)
 			return
 		}
-		response.CharacterProgresses = story.CharacterProgresses 
-		response.Teachers = story.Teachers
-		response.Result = "success"
-		ctx.JSON(http.StatusOK, response)
+		
+		response := jsonmodel.CharacterResponse {
+			CharacterProgresses: story.CharacterProgresses,
+			Teachers: story.Teachers,
+		}
+		res_util.SetStructResponse(ctx, http.StatusOK, res_util.ResultOK, response)
 	}
 }
 
@@ -81,14 +76,10 @@ func GetCurrentStory() gin.HandlerFunc {
 		var response jsonmodel.StoryResponse
 		if err := database.Sqldb.Model(&model.StoryProgress{}).Where("user_id = ? && completed = ?", userid,false).Last(&response).Error; err != nil {
 			log.Println(err)
-			ctx.JSON(http.StatusBadRequest, gin.H{
-				"result": "failed",
-				"error":  "該当する進捗が見つかりません",
-			})
+			res_util.SetErrorResponse(ctx, http.StatusBadRequest, res_util.ErrDataNotFound)
 			return
 		}
-		response.Result = "success"
-		ctx.JSON(http.StatusOK, response)
+		res_util.SetStructResponse(ctx, http.StatusOK, res_util.ResultOK, response)
 	}
 }
 
@@ -100,49 +91,32 @@ func FinishProgress() gin.HandlerFunc {
 		var user model.User
 		if err := database.Sqldb.Where("id = ?", userid).Take(&user).Error; err != nil {
 			log.Println(err)
-			ctx.JSON(http.StatusBadRequest, gin.H{
-				"result": "failed",
-				"error":  "該当するユーザーが見つかりません",
-			})
+			res_util.SetErrorResponse(ctx, http.StatusInternalServerError, res_util.ErrFailDataFetch)
 			return
 		}
-		if err := database.Sqldb.Where("user_id = ? && completed = ?", userid,false).Last(&story).Error; err != nil {
+		if err := database.Sqldb.Where("user_id = ? && completed = ?", userid, false).Last(&story).Error; err != nil {
 			log.Println(err)
-			ctx.JSON(http.StatusBadRequest, gin.H{
-				"result": "failed",
-				"error":  "該当する進捗が見つかりません",
-			})
+			res_util.SetErrorResponse(ctx, http.StatusBadRequest, res_util.ErrDataNotFound)
 			return
 		}
 		story.Completed = true
 		if err := database.Sqldb.Save(&story).Error; err != nil {
 			log.Println(err)
-			ctx.JSON(http.StatusInternalServerError, gin.H{
-				"result": "failed",
-				"error":  "データの保存に失敗しました",
-			})
+			res_util.SetErrorResponse(ctx, http.StatusInternalServerError, res_util.ErrFailDataStore)
 			return
 		}
 		var characters []model.CompletedProgress
 		if err := database.Sqldb.Model(&model.CharacterProgress{}).Select("main_character_id","name","visual","vocal","dance","active_skill_level","support_character_id","passive_skill_level").Where("story_progress_id = ?", story.ID).Find(&characters).Error; err != nil {
 			log.Println(err)
-			ctx.JSON(http.StatusInternalServerError, gin.H{
-				"result": "failed",
-				"error":  "データの保存に失敗しました",
-			})
+			res_util.SetErrorResponse(ctx, http.StatusInternalServerError, res_util.ErrFailDataStore)
 			return
 		}
 		if err := database.Sqldb.Model(&user).Association("CompletedProgresses").Append(&characters); err != nil {
 			log.Println(err)
-			ctx.JSON(http.StatusInternalServerError, gin.H{
-				"result": "failed",
-				"error":  "データの保存に失敗しました",
-			})
+			res_util.SetErrorResponse(ctx, http.StatusInternalServerError, res_util.ErrFailDataStore)
 			return
 		}
-		ctx.JSON(http.StatusOK, gin.H {
-			"result": "success",
-		})
+		res_util.SetNormalResponse(ctx, http.StatusOK, res_util.ResultOK)
 	}
 }
 
@@ -153,24 +127,16 @@ func UpdateCharacters() gin.HandlerFunc {
 		body_byte_interface, _ := ctx.Get("body_rawbyte")
 		body_rawbyte := body_byte_interface.([]byte)
 		if err := json.Unmarshal(body_rawbyte, &request); err != nil{
-			ctx.JSON(http.StatusBadRequest, gin.H{
-				"result": "failed",
-				"error":  "不適切なリクエストです",
-			})
+			res_util.SetErrorResponse(ctx, http.StatusBadRequest, res_util.ErrFailParseJSON)
 			return
 		}
 		for _ , v := range request.CharacterProgresses {
 			if err := database.Sqldb.Model(&model.CharacterProgress{}).Where("id = ?", v.ID).Updates(&v).Error; err != nil{
-				ctx.JSON(http.StatusOK, gin.H {
-					"result": "failed",
-					"error":  "データの更新に失敗しました",
-				})
+				res_util.SetErrorResponse(ctx, http.StatusInternalServerError, res_util.ErrFailDataStore)
 				return
 			}
 		}
-		ctx.JSON(http.StatusOK, gin.H {
-			"result": "success",
-		})
+		res_util.SetNormalResponse(ctx, http.StatusOK, res_util.ResultOK)
 	}
 }
 
@@ -182,22 +148,14 @@ func UpdateMainStory() gin.HandlerFunc {
 		body_byte_interface, _ := ctx.Get("body_rawbyte")
 		body_rawbyte := body_byte_interface.([]byte)
 		if err := json.Unmarshal(body_rawbyte, &request); err != nil{
-			ctx.JSON(http.StatusBadRequest, gin.H{
-				"result": "failed",
-				"error":  "不適切なリクエストです",
-			})
+			res_util.SetErrorResponse(ctx, http.StatusBadRequest, res_util.ErrFailParseJSON)
 			return
 		}
 		if err := database.Sqldb.Model(&model.StoryProgress{}).Where("user_id = ? && completed = ?", userid,false).Updates(&request).Error; err != nil{
-			ctx.JSON(http.StatusOK, gin.H {
-				"result": "failed",
-				"error":  "データの更新に失敗しました",
-			})
+			res_util.SetErrorResponse(ctx, http.StatusInternalServerError, res_util.ErrFailDataStore)
 			return
 		}
-		ctx.JSON(http.StatusOK, gin.H {
-			"result": "success",
-		})
+		res_util.SetNormalResponse(ctx, http.StatusOK, res_util.ResultOK)
 	}
 }
 
@@ -211,10 +169,7 @@ func CreateProgress() gin.HandlerFunc {
 		body_rawbyte := body_byte_interface.([]byte)
 		if err := json.Unmarshal(body_rawbyte, &request); err != nil{
 			log.Println(err)
-			ctx.JSON(http.StatusBadRequest, gin.H{
-				"result": "failed",
-				"error":  "不適切なリクエストです",
-			})
+			res_util.SetErrorResponse(ctx, http.StatusBadRequest, res_util.ErrFailParseJSON)
 			return
 		}
 		log.Println(request.Teachers)
@@ -236,7 +191,7 @@ func CreateProgress() gin.HandlerFunc {
 			})
 		}
 		if len(current) != 0 || (proglength > 0 && proglength != 5) || (teachlength > 0 && teachlength != 1){
-			err = errors.New("Invalid request")
+			err = errors.New("invalid request")
 		}else{
 			//進捗の新規作成
 			err = database.Sqldb.Create(&story).Error;	
@@ -244,10 +199,7 @@ func CreateProgress() gin.HandlerFunc {
 
 		if err != nil {
 			log.Println(err)
-			ctx.JSON(http.StatusInternalServerError, gin.H{
-				"result": "failed",
-				"error":  "データの保存に失敗しました",
-			})
+			res_util.SetErrorResponse(ctx, http.StatusInternalServerError, res_util.ErrFailDataStore)
 			return
 		}
 		characters := []jsonmodel.CreateCharacterChild{}
@@ -262,13 +214,12 @@ func CreateProgress() gin.HandlerFunc {
 				TeacherId: teacher.ID,
 			})
 		}
-		response := jsonmodel.CreateResponse{
-			Result: "success",
+		response := jsonmodel.CreateResponse {
 			ProgressId: story.ID,
 			Characters: characters,
 			Teachers: teachers,
 		}
-		ctx.JSON(http.StatusOK,response)
+		res_util.SetStructResponse(ctx, http.StatusOK, res_util.ResultOK, response)
 	}
 }
 

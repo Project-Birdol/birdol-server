@@ -7,23 +7,19 @@ type GalleryChild struct {
 }
 
 type GalleryResponse struct {
-	Result string `json:"result"`
 	Birdols []GalleryChild `json:"birdols"` 
 }
 
 type StoryResponse struct{
 	ID uint `gorm:"primarykey" json:"id"` 
-	Result string `gorm:"-" json:"result"`
 	MainStoryId string	`json:"main_story_id"`
 }
 
-type DendouResponse struct{
-	Result string `json:"result"`
+type HallOfFameResponse struct{
 	Characters []model.CompletedProgress `json:"characters"` 
 }
 
 type CharacterResponse struct{
-	Result string `gorm:"-" json:"result"`
 	CharacterProgresses []model.CharacterProgress `json:"character_progresses"`
 	Teachers []model.Teacher `json:"teachers"`
 }
@@ -34,7 +30,6 @@ type CharacterProgressRequest struct{
 }
 
 type CreateResponse struct {
-	Result string `json:"result"`
 	ProgressId uint	`json:"progress_id"`
 	Characters []CreateCharacterChild `json:"characters"`
 	Teachers []CreateTeacherChild `json:"teachers"`  
