@@ -88,12 +88,6 @@ func FinishProgress() gin.HandlerFunc {
 		accessToken , _ := ctx.Get("access_token")
 		userid := accessToken.(model.AccessToken).UserID
 		var story model.StoryProgress
-		var user model.User
-		if err := database.Sqldb.Where("id = ?", userid).Take(&user).Error; err != nil {
-			log.Println(err)
-			res_util.SetErrorResponse(ctx, http.StatusInternalServerError, res_util.ErrFailDataFetch)
-			return
-		}
 		if err := database.Sqldb.Where("user_id = ? && completed = ?", userid, false).Last(&story).Error; err != nil {
 			log.Println(err)
 			res_util.SetErrorResponse(ctx, http.StatusBadRequest, res_util.ErrDataNotFound)
@@ -111,7 +105,8 @@ func FinishProgress() gin.HandlerFunc {
 			res_util.SetErrorResponse(ctx, http.StatusInternalServerError, res_util.ErrFailDataStore)
 			return
 		}
-		if err := database.Sqldb.Model(&user).Association("CompletedProgresses").Append(&characters); err != nil {
+		
+		if err := database.Sqldb.Model(&model.User{}).Where("id = ?", userid).Association("CompletedProgresses").Append(&characters); err != nil {
 			log.Println(err)
 			res_util.SetErrorResponse(ctx, http.StatusInternalServerError, res_util.ErrFailDataStore)
 			return
