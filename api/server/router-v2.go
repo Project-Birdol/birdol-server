@@ -41,12 +41,20 @@ func GetRouterV2() *gin.Engine {
 			gamedata_nobody.Use(middlewares.ReadSessionIDfromQuery())
 			{
 				// Requests that have no body
+				gamedata_nobody.GET("/gallery", controller.GetGalleryInfo())
+				gamedata_nobody.GET("/complete", controller.GetCompletedCharacters())
+				gamedata_nobody.GET("/character", controller.GetCurrentCharacters())
+				gamedata_nobody.GET("/story", controller.GetCurrentStory())
+				
 			}
-
 			gamedata_body := gamedata.Group("")
 			gamedata_body.Use(middlewares.ReadSessionIDfromBody())
 			{
 				// Requests that have body
+				gamedata_body.PUT("/complete", controller.FinishProgress())
+				gamedata_body.PUT("/character", controller.UpdateCharacters())
+				gamedata_body.PUT("/story", controller.UpdateMainStory())
+				gamedata_body.PUT("/new", controller.CreateProgress())
 			}
 		}
 	}

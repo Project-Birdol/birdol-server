@@ -31,7 +31,7 @@ func GetRouterV1() *gin.Engine {
 			}
 			auth.GET("/refresh", controller.RefreshToken()) // Token Refresh
 		}
-
+		/*
 		progress := v1.Group("/gamedata/:userid")
 		{
 			progress.GET("/gallery", controller.GetGalleryInfo())
@@ -40,6 +40,7 @@ func GetRouterV1() *gin.Engine {
 			progress.GET("", controller.GetCurrentProgress())
 			progress.PUT("", controller.CreateOrUpdateProgress())
 		}
+		*/
 	}
 	return router
 }

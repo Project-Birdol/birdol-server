@@ -12,7 +12,6 @@ import (
 	"net/http"
 	"os"
 	"regexp"
-
 	"github.com/MISW/birdol-server/database"
 	"github.com/MISW/birdol-server/database/model"
 	"github.com/MISW/birdol-server/utils/response"
@@ -36,7 +35,6 @@ func RequestValidation() gin.HandlerFunc {
 		device_id := ctx.GetHeader("device_id")
 		signature_str := ctx.GetHeader("X-Birdol-Signature")
 		timestamp := ctx.GetHeader("X-Birdol-TimeStamp")
-
 		// Verify Authorization Header
 		reg := regexp.MustCompile(`Bearer (.+)$`)
 		if !reg.MatchString(authorization) {
@@ -69,7 +67,6 @@ func RequestValidation() gin.HandlerFunc {
 			ctx.Abort()
 			return
 		}
-
 		body_byte, _ := io.ReadAll(ctx.Request.Body)
 		ctx.Set("body_rawbyte", body_byte)
 		request_body := string(body_byte)

@@ -1,6 +1,10 @@
 package response
 
-import "github.com/gin-gonic/gin"
+import (
+	"encoding/json"
+
+	"github.com/gin-gonic/gin"
+)
 
 /*
 	Public Functions
@@ -22,6 +26,15 @@ func SetNormalResponse(ctx *gin.Context, status_code int, result_str string, pro
 	ctx.JSON(status_code, merged_property)
 }
 
+// TODO: For JSON Structure
+func SetStructResponse(ctx *gin.Context, status_code int, result_str string, property interface{}){
+	result := gin.H { "result" : result_str }
+	marshaled := make(map[string]interface{})
+	data, _ := json.Marshal(property)
+	_ = json.Unmarshal(data, &marshaled)
+	merged := mergeMultipleInterface(result, marshaled)
+	ctx.JSON(status_code, merged)
+}
 
 /*
 	Private Functions
