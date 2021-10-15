@@ -13,6 +13,7 @@ type GalleryResponse struct {
 type StoryResponse struct{
 	ID uint `gorm:"primarykey" json:"id"` 
 	MainStoryId string	`json:"main_story_id"`
+	LessonCount uint	`json:"lesson_count"`
 }
 
 type HallOfFameResponse struct{
@@ -36,7 +37,7 @@ type CreateResponse struct {
 }
 
 type CreateCharacterChild struct{
-	ChracterId uint `json:"chracter_id"`
+	ChracterId uint `json:"character_id"`
 }
 
 type CreateTeacherChild struct{

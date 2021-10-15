@@ -44,6 +44,7 @@ func GetCompletedCharacters() gin.HandlerFunc {
 		response := jsonmodel.HallOfFameResponse {
 			Characters: characters,
 		}
+		log.Println(response)
 		res_util.SetStructResponse(ctx, http.StatusOK, res_util.ResultOK, response)
 	}
 }
@@ -105,8 +106,10 @@ func FinishProgress() gin.HandlerFunc {
 			res_util.SetErrorResponse(ctx, http.StatusInternalServerError, res_util.ErrFailDataStore)
 			return
 		}
-		
-		if err := database.Sqldb.Model(&model.User{}).Where("id = ?", userid).Association("CompletedProgresses").Append(&characters); err != nil {
+		for i := 0;i<5;i++{
+			characters[i].UserId = userid
+		}
+		if err := database.Sqldb.Model(&model.CompletedProgress{}).Create(&characters).Error; err != nil {
 			log.Println(err)
 			res_util.SetErrorResponse(ctx, http.StatusInternalServerError, res_util.ErrFailDataStore)
 			return
@@ -176,7 +179,6 @@ func CreateProgress() gin.HandlerFunc {
 		teachlength := len(request.Teachers)
 		story := model.StoryProgress{}
 		story.UserId = userid
-		story.MainStoryId = "opening"
 		story.CharacterProgresses = request.CharacterProgresses
 		story.Teachers = []model.Teacher{}
 		for _ , newteacher := range request.Teachers {
@@ -198,6 +200,7 @@ func CreateProgress() gin.HandlerFunc {
 			return
 		}
 		characters := []jsonmodel.CreateCharacterChild{}
+		log.Println(story)
 		for _ , character := range story.CharacterProgresses {
 			characters = append(characters, jsonmodel.CreateCharacterChild{
 				ChracterId: character.ID,
