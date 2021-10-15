@@ -26,4 +26,8 @@ const (
 	ErrFailCreateSession	= "fail_create_session"
 	ErrInvalidRefreshToken	= "invalid_refresh_token"
 	ErrFailRefresh			= "fail_refresh"
+
+	ErrDataNotFound			= "data_not_found"
+	ErrFailDataFetch		= "fail_data_fetch"
+	ErrFailDataStore		= "fail_data_store"
 )

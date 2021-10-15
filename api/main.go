@@ -23,15 +23,11 @@ func main() {
 	}else{
 		router = server.GetRouterV2()
 	}
-	
-	PORT := ":80"
-	if mode == "release" {
+	if mode == "production" {
 		log.Println("Running in Production mode.")
 	} else {
 		log.Println("Running in Development mode.")
 	}
-	if os.Getenv("PORT") != "" {
-		PORT = ":" + os.Getenv("PORT")
-	}
+	PORT := ":" + os.Getenv("PORT")
 	router.Run(PORT)
 }

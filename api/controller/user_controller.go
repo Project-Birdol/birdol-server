@@ -18,7 +18,6 @@ import (
 func HandleSignUp() gin.HandlerFunc {
 	return func(ctx *gin.Context) {
 		log.SetPrefix("[SignUp] ")
-
 		content_type := ctx.GetHeader("Content-Type")
 		if content_type != gin.MIMEJSON {
 			response.SetErrorResponse(ctx, http.StatusBadRequest, response.ErrInvalidType)
@@ -41,7 +40,12 @@ func HandleSignUp() gin.HandlerFunc {
 		}
 		
 		// ユーザ新規作成。保存
-		new_user := model.User{Name: request_body.Name, AccountID: account_id, LinkPassword: model.LinkPassword{ExpireDate: time.Now()}}
+		new_user := model.User{
+			Name: request_body.Name, 
+			AccountID: account_id, 
+			LinkPassword: model.LinkPassword{ExpireDate: time.Now()},
+			CompletedProgresses: request_body.CompletedProgresses,
+		}
 		if err := database.Sqldb.Create(&new_user).Error; err != nil {
 			response.SetErrorResponse(ctx, http.StatusInternalServerError, response.ErrFailAccountCreation)
 			return
