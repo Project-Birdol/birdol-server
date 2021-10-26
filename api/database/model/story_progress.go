@@ -4,7 +4,7 @@ type StoryProgress struct
 {
 	Model
 	UserId uint	`json:"-"`
-	MainStoryId string	`gorm:"default:opening" json:"main_story_id"`
+	MainStoryId string	`gorm:"default:1a" json:"main_story_id"`
 	Completed bool	`json:"-"`
 	LessonCount uint	`gorm:"default:5" json:"lesson_count"`
     CharacterProgresses []CharacterProgress `gorm:"foreignKey:StoryProgressId" json:"-"`
