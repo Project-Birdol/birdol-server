@@ -32,6 +32,7 @@ func MigrateDB(){
 	Sqldb.AutoMigrate(&model.CharacterProgress{})
 	Sqldb.AutoMigrate(&model.Teacher{})
 	Sqldb.AutoMigrate(&model.CompletedProgress{})
+	Sqldb.AutoMigrate(&model.ValidClient{})
 }
 
 func SqlConnect() {
