@@ -47,7 +47,7 @@ func ClientVerCheck() gin.HandlerFunc {
 		system_ver, _ := strconv.Atoi(version[0])
 		major_ver, _ := strconv.Atoi(version[1])
 		minor_ver, _ := strconv.Atoi(version[2])
-		if (validCli.SystemVersion != 0 && validCli.MajorVersion != 0 && validCli.MinorVersion != 0) && (validCli.SystemVersion != uint(system_ver) || validCli.MajorVersion != uint(major_ver) || validCli.MinorVersion != uint(minor_ver)) {
+		if (validCli.SystemVersion != uint(system_ver) || validCli.MajorVersion != uint(major_ver) || validCli.MinorVersion != uint(minor_ver)) {
 			response.SetErrorResponse(ctx, http.StatusForbidden, response.ErrUpdateRequired)
 			return
 		}
