@@ -13,6 +13,11 @@ func GetRouterV2() *gin.Engine {
 	router := gin.Default()
 	v2 := router.Group("api/v2")
 	{
+		cli := v2.Group("/cli")
+		{
+			cli.POST("/version", controller.ClientVerCheck())
+		}
+		
 		user := v2.Group("/user")
 		{
 			user.PUT("", controller.HandleSignUp())

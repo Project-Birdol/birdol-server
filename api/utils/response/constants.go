@@ -30,4 +30,8 @@ const (
 	ErrDataNotFound			= "data_not_found"
 	ErrFailDataFetch		= "fail_data_fetch"
 	ErrFailDataStore		= "fail_data_store"
+
+	ErrInvalidVersionString = "invalid_version_string"
+	ErrInvalidPlatform		= "invalid_platform"
+	ErrUpdateRequired		= "update_required"
 )
