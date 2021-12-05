@@ -23,6 +23,14 @@ jobs:
           sudo chmod +x /usr/local/bin/docker-compose
           sudo ln -sf /usr/local/bin/docker-compose /usr/bin/docker-compose
         working-directory: ./
+      
+      - name: Setup dockerize
+        run: |
+          sudo curl -L -o /usr/local/bin/dockerize https://github.com/powerman/dockerize/releases/download/$DOCKERIZE_VERSION/dockerize-linux-x86_64
+          sudo chmod +x /usr/local/bin/dockerize
+          sudo ln -sf /usr/local/bin/dockerize /usr/bin/dockerize
+        env:
+          DOCKERIZE_VERSION: v0.15.4
 
       - name: Setup newman
         run: npm install -g newman
@@ -43,7 +51,7 @@ jobs:
         working-directory: ./ci_tool
         
       - name: Sleep to wait for preparing of containers
-        run: sleep 30
+        run: dockerize --wait http://localhost:8080 --wait-http-status-code 404 --timeout 180s
         
       - name: Run test shell script
         run: ./newman_ci.sh
