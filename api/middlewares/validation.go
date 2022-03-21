@@ -10,6 +10,7 @@ import (
 	"io"
 	"math/big"
 	"net/http"
+	"log"
 	"os"
 	"regexp"
 	"github.com/MISW/birdol-server/database"
@@ -53,6 +54,9 @@ func RequestValidation() gin.HandlerFunc {
 		}
 
 		// confirm device id
+		log.Println("recieved deviceid: ", device_id) // Added 3/21
+		log.Println("token binded deviceid: ", recv_token.DeviceID) // Added 3/21
+		
 		if device_id != recv_token.DeviceID {
 			response.SetErrorResponse(ctx, http.StatusUnauthorized, response.ErrInvalidDevice)
 			ctx.Abort()
