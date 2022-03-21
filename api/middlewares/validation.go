@@ -10,6 +10,7 @@ import (
 	"io"
 	"math/big"
 	"net/http"
+	"net/http/httputil"
 	"log"
 	"os"
 	"regexp"
@@ -31,6 +32,13 @@ type rsaPublicKey struct {
 
 func RequestValidation() gin.HandlerFunc {
 	return func(ctx *gin.Context) {
+		// RequestDump
+		requestDump, err := httputil.DumpRequest(ctx.Request, true)
+		if err != nil {
+			fmt.Println(err)
+		}
+		log.Println(string(requestDump))
+		
 		// pick params from header
 		authorization := ctx.GetHeader("Authorization")
 		device_id := ctx.GetHeader("device_id")
