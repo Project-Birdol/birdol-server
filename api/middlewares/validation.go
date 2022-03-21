@@ -10,8 +10,6 @@ import (
 	"io"
 	"math/big"
 	"net/http"
-	"net/http/httputil"
-	"log"
 	"os"
 	"regexp"
 	"github.com/MISW/birdol-server/database"
