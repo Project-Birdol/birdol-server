@@ -35,7 +35,7 @@ func RequestValidation() gin.HandlerFunc {
 		// RequestDump
 		requestDump, err := httputil.DumpRequest(ctx.Request, true)
 		if err != nil {
-			fmt.Println(err)
+			log.Println(err)
 		}
 		log.Println(string(requestDump))
 		
