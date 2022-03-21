@@ -34,7 +34,12 @@ func GetRouterV2() *gin.Engine {
 				auth_root.DELETE("", controller.UnlinkAccount()) // Unlink Account
 				auth_root.PUT("", controller.SetDataLink()) // Link Account
 			}
-			auth.GET("/refresh", controller.RefreshToken()) // Token Refresh
+		}
+		
+		refresh := v2.Group("/refresh")
+		refresh.Use(middlewares.RequestValidation())
+		{
+			refresh.GET("", controller.RefreshToken()) // Token Refresh
 		}
 
 		gamedata := v2.Group("/gamedata")
