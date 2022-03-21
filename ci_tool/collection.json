@@ -119,7 +119,7 @@
 										"type": "text"
 									},
 									{
-										"key": "device_id",
+										"key": "DeviceID",
 										"value": "{{DEVICE_ID_A}}",
 										"type": "text"
 									}
@@ -185,7 +185,7 @@
 										"type": "text"
 									},
 									{
-										"key": "device_id",
+										"key": "DeviceID",
 										"value": "{{DEVICE_ID_A}}",
 										"type": "text"
 									}
@@ -268,7 +268,7 @@
 										"type": "text"
 									},
 									{
-										"key": "device_id",
+										"key": "DeviceID",
 										"value": "{{DEVICE_ID_A}}",
 										"type": "text"
 									}
@@ -402,7 +402,7 @@
 										"type": "text"
 									},
 									{
-										"key": "device_id",
+										"key": "DeviceID",
 										"value": "{{DEVICE_ID_B}}",
 										"type": "text"
 									}
@@ -468,7 +468,7 @@
 										"type": "text"
 									},
 									{
-										"key": "device_id",
+										"key": "DeviceID",
 										"value": "{{DEVICE_ID_B}}",
 										"type": "text"
 									}
@@ -551,7 +551,7 @@
 										"type": "text"
 									},
 									{
-										"key": "device_id",
+										"key": "DeviceID",
 										"value": "{{DEVICE_ID_B}}",
 										"type": "text"
 									}

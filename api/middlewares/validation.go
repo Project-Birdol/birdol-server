@@ -32,16 +32,9 @@ type rsaPublicKey struct {
 
 func RequestValidation() gin.HandlerFunc {
 	return func(ctx *gin.Context) {
-		// RequestDump
-		requestDump, err := httputil.DumpRequest(ctx.Request, true)
-		if err != nil {
-			log.Println(err)
-		}
-		log.Println(string(requestDump))
-		
 		// pick params from header
 		authorization := ctx.GetHeader("Authorization")
-		device_id := ctx.GetHeader("device_id")
+		device_id := ctx.GetHeader("DeviceID")
 		signature_str := ctx.GetHeader("X-Birdol-Signature")
 		timestamp := ctx.GetHeader("X-Birdol-TimeStamp")
 		// Verify Authorization Header
@@ -61,10 +54,6 @@ func RequestValidation() gin.HandlerFunc {
 			return
 		}
 
-		// confirm device id
-		log.Println("recieved deviceid: ", device_id) // Added 3/21
-		log.Println("token binded deviceid: ", recv_token.DeviceID) // Added 3/21
-		
 		if device_id != recv_token.DeviceID {
 			response.SetErrorResponse(ctx, http.StatusUnauthorized, response.ErrInvalidDevice)
 			ctx.Abort()
