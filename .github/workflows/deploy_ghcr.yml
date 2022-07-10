@@ -6,7 +6,7 @@ on:
 
 env:
   REGISTRY: ghcr.io
-  IMAGE_NAME: MISW/birdol/web
+  IMAGE_NAME: ${{ github.repository }}
 
 jobs:
   deploy:
