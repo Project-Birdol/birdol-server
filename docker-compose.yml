@@ -5,7 +5,15 @@ services:
       context: .
       target: builder
       dockerfile: Dockerfile
-    env_file: ./.env
+    environment:
+      GIN_MODE: debug 
+      DB_USER: ${MYSQL_USER}
+      DB_PASSWORD: ${MYSQL_PASSWORD}
+      DB_ADDRESS: db
+      DB_NAME: ${MYSQL_DATABASE}
+      API_VERSION: v2
+      TZ: 'Asia/Tokyo'
+      PORT: 80
     command: /bin/sh -c "go run main.go"
     stdin_open: true
     tty: true
@@ -18,10 +26,10 @@ services:
   db:
     image: mysql:8.0
     environment:
-      MYSQL_ROOT_PASSWORD: root
-      MYSQL_DATABASE: birdoldb
-      MYSQL_USER: go_test
-      MYSQL_PASSWORD: password
+      MYSQL_ROOT_PASSWORD: ${MYSQL_ROOT_PASSWORD}
+      MYSQL_DATABASE: ${MYSQL_DATABASE}
+      MYSQL_USER: ${MYSQL_USER}
+      MYSQL_PASSWORD: ${MYSQL_PASSWORD}
       TZ: 'Asia/Tokyo'
     command: mysqld --character-set-server=utf8mb4 --collation-server=utf8mb4_unicode_ci
     volumes:
