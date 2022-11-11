@@ -26,6 +26,7 @@ jobs:
         uses: tj-actions/changed-files@v34
         with:
           files: |
+            .github/workflows/api_test.yml
             api/**
             db/**
             Dockerfile
