@@ -21,18 +21,39 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v2
 
+      - name: Get changed files
+        id: changed-files
+        uses: tj-actions/changed-files@v34
+        with:
+          files: |
+            .github/workflows/api_test.yml
+            api/**
+            db/**
+            Dockerfile
+            docker-compose.*
+            ci_tool/**
+
       - name: Build Docker image and run docker container
         run: docker-compose -f docker-compose.yml -f docker-compose.test.yml up -d
+        if: steps.changed-files.outputs.any_changed == 'true'
+        env:
+          MYSQL_ROOT_PASSWORD: ${{ secrets.MYSQL_ROOT_PASSWORD }}
+          MYSQL_DATABASE: ${{ secrets.MYSQL_DATABASE }}
+          MYSQL_USER: ${{ secrets.MYSQL_USER }}
+          MYSQL_PASSWORD: ${{ secrets.MYSQL_PASSWORD }}
         
       - name: Give permission to executables for test
         run: |
           sudo chmod +x ./newman_ci.sh
           sudo chmod +x ./rsa-sign/signing-cs
+        if: steps.changed-files.outputs.any_changed == 'true'
         working-directory: ./ci_tool
         
       - name: Sleep to wait for preparing of containers
+        if: steps.changed-files.outputs.any_changed == 'true'
         run: sleep 30
         
       - name: Run test shell script
         run: ./newman_ci.sh
+        if: steps.changed-files.outputs.any_changed == 'true'
         working-directory: ./ci_tool
