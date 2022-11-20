@@ -1,0 +1,3 @@
+[submodule "ci/verify-test-tool"]
+	path = ci/verify-test-tool
+	url = https://github.com/Project-Birdol/verify-test-tool.git
