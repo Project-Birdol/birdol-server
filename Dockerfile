@@ -1,4 +1,4 @@
-FROM golang:1.16-alpine as builder 
+FROM golang:1.19-alpine as builder 
 
 RUN apk update \
   && apk add --no-cache git curl make gcc g++ tzdata
@@ -12,11 +12,11 @@ RUN go mod download
 
 COPY . .
 
-RUN GOOS=linux GOARCH=amd64 go build -o /main
+RUN GOOS=linux GOARCH=amd64 go build -tags netgo -o ./birdol-server
 
-FROM alpine:3.9 as production
+FROM gcr.io/distroless/static-debian11 as production
 
-COPY --from=builder /main .
+COPY --from=builder /app/birdol-server /
 
 ENV PORT=${PORT}
-ENTRYPOINT ["/main"]
+CMD ["/birdol-server"]
