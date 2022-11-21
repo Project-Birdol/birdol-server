@@ -1,5 +1,35 @@
 version: '3'
 services:
-  db:
+  api:
+    build:
+      context: .
+      target: production
+      dockerfile: Dockerfile
+    environment:
+      GIN_MODE: release 
+      DB_USER: ${MYSQL_USER}
+      DB_PASSWORD: ${MYSQL_PASSWORD}
+      DB_ADDRESS: db
+      DB_NAME: ${MYSQL_DATABASE}
+      API_VERSION: v2
+      TZ: 'Asia/Tokyo'
+      PORT: 80
+    command: /birdol-server
     ports:
-      - 3366:3306
+      - 8080:80
+    depends_on:
+      - "db"
+  db:
+    image: mysql:8.0
+    environment:
+      MYSQL_ROOT_PASSWORD: ${MYSQL_ROOT_PASSWORD}
+      MYSQL_DATABASE: ${MYSQL_DATABASE}
+      MYSQL_USER: ${MYSQL_USER}
+      MYSQL_PASSWORD: ${MYSQL_PASSWORD}
+      TZ: 'Asia/Tokyo'
+    command: mysqld --character-set-server=utf8mb4 --collation-server=utf8mb4_unicode_ci
+    volumes:
+      - ./db/mysql.cnf:/etc/mysql/conf.d/mysql.cnf
+    ports:
+      - 3336:3306
+
