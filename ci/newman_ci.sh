@@ -1,25 +1,25 @@
 #!/bin/bash
 
-# ======================================
+# =================================================
 #  birdol-API automated testing tool
-#  [Dependencies]: nodejs, newman, jq
-# ======================================
+#  [Dependencies]: dotnet-sdk, nodejs, newman, jq
+# =================================================
 
 function clean() {
     echo "Cleaning..."
-    rm environment_tmp.json ./rsa-sign/keyfile/*
+    rm environment_tmp.json
     return 0
 }
 
 # Generate RSA Key
 echo "Generating RSA Key..."
-PUBKEY_A=`./rsa-sign/signing-cs gen rsa-sign/keyfile/key-a`
-PUBKEY_B=`./rsa-sign/signing-cs gen rsa-sign/keyfile/key-b`
+PUBKEY_A=`dotnet run -c Release --project verify-test-tool gen /tmp/key-a`
+PUBKEY_B=`dotnet run -c Release --project verify-test-tool gen /tmp/key-b`
 
 # Generate UUID
 echo "Generating UUID..."
-UUID_A=`./rsa-sign/signing-cs uuid`
-UUID_B=`./rsa-sign/signing-cs uuid`
+UUID_A=`dotnet run -c Release --project verify-test-tool uuid`
+UUID_B=`dotnet run -c Release --project verify-test-tool uuid`
 
 echo "Starting newman test process..."
 
@@ -34,7 +34,7 @@ fi
 
 # Run Test 2: LoginWithToken - DeviceA
 TS=`date '+%Y-%m-%d-%H-%M-%S'`
-SIG=`./rsa-sign/signing-cs sign "v2:$TS:" rsa-sign/keyfile/key-a.xml`
+SIG=`dotnet -c Release --project verify-test-tool sign "v2:$TS:" /tmp/key-a.xml`
 
 newman run collection.json -e environment_tmp.json --folder LoginWithToken --env-var "SIGNATURE=$SIG" --env-var "TIMESTAMP=$TS" --export-environment environment_tmp.json
 
@@ -50,7 +50,7 @@ BODY=`cat collection.json | jq -r '.item[].item[0].item[2].request.body.raw'`
 BODY=`echo "$BODY" | sed s/{{LINK_PASSWORD}}/$PASS/`
 
 TS=`date '+%Y-%m-%d-%H-%M-%S'`
-SIG=`./rsa-sign/signing-cs sign "v2:$TS:$BODY" rsa-sign/keyfile/key-a.xml`
+SIG=`dotnet run -c Release --project verify-test-tool sign "v2:$TS:$BODY" /tmp/key-a.xml`
 
 newman run collection.json -e environment_tmp.json --folder SetDataLink --env-var "SIGNATURE=$SIG" --env-var "TIMESTAMP=$TS" --export-environment environment_tmp.json
 
@@ -62,7 +62,7 @@ fi
 
 # Run Test 4: Refresh Token - DeviceA
 TS=`date '+%Y-%m-%d-%H-%M-%S'`
-SIG=`./rsa-sign/signing-cs sign "v2:$TS:" rsa-sign/keyfile/key-a.xml`
+SIG=`dotnet run -c Release --project verify-test-tool sign "v2:$TS:" /tmp/key-a.xml`
 
 newman run collection.json -e environment_tmp.json --folder RefreshToken --env-var "SIGNATURE=$SIG" --env-var "TIMESTAMP=$TS" --export-environment environment_tmp.json
 
@@ -83,7 +83,7 @@ fi
 
 # Run Test 6: LoginWithToken - DeviceB
 TS=`date '+%Y-%m-%d-%H-%M-%S'`
-SIG=`./rsa-sign/signing-cs sign "v2:$TS:" rsa-sign/keyfile/key-b.xml`
+SIG=`dotnet run -c Release --project verify-test-tool sign "v2:$TS:" /tmp/key-b.xml`
 
 newman run collection.json -e environment_tmp.json --folder LoginWithTokenB --env-var "SIGNATURE=$SIG" --env-var "TIMESTAMP=$TS" --export-environment environment_tmp.json
 
@@ -99,7 +99,7 @@ BODY=`cat collection.json | jq -r '.item[].item[1].item[2].request.body.raw'`
 BODY=`echo "$BODY" | sed s/{{LINK_PASSWORD}}/$PASS/`
 
 TS=`date '+%Y-%m-%d-%H-%M-%S'`
-SIG=`./rsa-sign/signing-cs sign "v2:$TS:$BODY" rsa-sign/keyfile/key-b.xml`
+SIG=`dotnet run -c Release --project verify-test-tool sign "v2:$TS:$BODY" /tmp/key-b.xml`
 
 newman run collection.json -e environment_tmp.json --folder SetDataLinkB --env-var "SIGNATURE=$SIG" --env-var "TIMESTAMP=$TS" --export-environment environment_tmp.json
 
@@ -111,7 +111,7 @@ fi
 
 # Run Test 8: Refresh Token - DeviceB
 TS=`date '+%Y-%m-%d-%H-%M-%S'`
-SIG=`./rsa-sign/signing-cs sign "v2:$TS:" rsa-sign/keyfile/key-b.xml`
+SIG=`dotnet run -c Release --project verify-test-tool sign "v2:$TS:" /tmp/key-b.xml`
 
 newman run collection.json -e environment_tmp.json --folder RefreshTokenB --env-var "SIGNATURE=$SIG" --env-var "TIMESTAMP=$TS" --export-environment environment_tmp.json
 
