@@ -6,7 +6,7 @@ require (
 	github.com/gin-gonic/gin v1.8.1
 	github.com/seehuhn/mt19937 v1.0.0
 	golang.org/x/crypto v0.0.0-20210921155107-089bfa567519
-	gorm.io/driver/mysql v1.4.3
+	gorm.io/driver/mysql v1.4.4
 	gorm.io/gorm v1.24.1
 )
 
