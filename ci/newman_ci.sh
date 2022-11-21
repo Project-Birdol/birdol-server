@@ -34,7 +34,7 @@ fi
 
 # Run Test 2: LoginWithToken - DeviceA
 TS=`date '+%Y-%m-%d-%H-%M-%S'`
-SIG=`dotnet -c Release --project verify-test-tool sign "v2:$TS:" /tmp/key-a.xml`
+SIG=`dotnet run -c Release --project verify-test-tool sign "v2:$TS:" /tmp/key-a.xml`
 
 newman run collection.json -e environment_tmp.json --folder LoginWithToken --env-var "SIGNATURE=$SIG" --env-var "TIMESTAMP=$TS" --export-environment environment_tmp.json
 
