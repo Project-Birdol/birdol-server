@@ -12,14 +12,29 @@ jobs:
     name: Integration test with newman
     runs-on: ubuntu-latest
     steps:
+    
+      - name: Setup nodejs
+        uses: actions/setup-node@v3
+        with:
+          node-version: |
+            18.x
+    
       - name: Setup newman
         run: sudo npm install -g newman
         
       - name: Setup jq
         run: sudo apt install jq
+
+      - name: Setup .NET SDK
+        uses: actions/setup-dotnet@v3
+        with:
+          dotnet-version: |
+            7.0
         
       - name: Checkout
-        uses: actions/checkout@v2
+        uses: actions/checkout@v3
+        with:
+          submodules: recursive
 
       - name: Get changed files
         id: changed-files
@@ -31,10 +46,10 @@ jobs:
             db/**
             Dockerfile
             docker-compose.*
-            ci_tool/**
+            ci/**
 
       - name: Build Docker image and run docker container
-        run: docker-compose -f docker-compose.yml -f docker-compose.test.yml up -d
+        run: docker-compose -f docker-compose.test.yml up -d
         if: steps.changed-files.outputs.any_changed == 'true'
         env:
           MYSQL_ROOT_PASSWORD: ${{ secrets.MYSQL_ROOT_PASSWORD }}
@@ -45,9 +60,8 @@ jobs:
       - name: Give permission to executables for test
         run: |
           sudo chmod +x ./newman_ci.sh
-          sudo chmod +x ./rsa-sign/signing-cs
         if: steps.changed-files.outputs.any_changed == 'true'
-        working-directory: ./ci_tool
+        working-directory: ./ci
         
       - name: Sleep to wait for preparing of containers
         if: steps.changed-files.outputs.any_changed == 'true'
@@ -56,4 +70,4 @@ jobs:
       - name: Run test shell script
         run: ./newman_ci.sh
         if: steps.changed-files.outputs.any_changed == 'true'
-        working-directory: ./ci_tool
+        working-directory: ./ci

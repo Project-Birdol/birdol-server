@@ -3,7 +3,7 @@ package middlewares
 import (
 	"crypto"
 	"crypto/rsa"
-	"crypto/sha256"
+	"crypto/sha512"
 	"encoding/base64"
 	"encoding/hex"
 	"encoding/xml"
@@ -72,10 +72,10 @@ func RequestValidation() gin.HandlerFunc {
 
 		prefix := os.Getenv("API_VERSION")
 		signature_base := prefix + ":" + timestamp + ":" + request_body
-		hashed_base := sha256.Sum256([]byte(signature_base))
+		hashed_base := sha512.Sum512([]byte(signature_base))
 		signature, _ := hex.DecodeString(signature_str)
 
-		verify_err := rsa.VerifyPKCS1v15(&public_key, crypto.SHA256, hashed_base[:], signature)
+		verify_err := rsa.VerifyPKCS1v15(&public_key, crypto.SHA512, hashed_base[:], signature)
 		if verify_err != nil {
 			response.SetErrorResponse(ctx, http.StatusUnauthorized, response.ErrInvalidSignature)
 			ctx.Abort()
