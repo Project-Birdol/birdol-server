@@ -12,6 +12,13 @@ jobs:
     name: Integration test with newman
     runs-on: ubuntu-latest
     steps:
+    
+      - name: Setup nodejs
+        uses: actions/setup-node@v3
+        with:
+          node-version: |
+            18.x
+    
       - name: Setup newman
         run: sudo npm install -g newman
         
