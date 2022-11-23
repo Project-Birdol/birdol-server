@@ -10,4 +10,5 @@ type AccessToken struct {
 	RefreshToken	string		`gorm:"not null"`
 	TokenUpdated	time.Time	`gorm:"not null"`
 	PublicKey		string		`gorm:"not null"`
+	KeyType			string
 }

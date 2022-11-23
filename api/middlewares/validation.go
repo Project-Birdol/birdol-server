@@ -1,24 +1,31 @@
+/*
+Middlewares for gin
+*/
 package middlewares
 
 import (
 	"crypto"
+	"crypto/ecdsa"
 	"crypto/rsa"
 	"crypto/sha512"
+	"crypto/x509"
 	"encoding/base64"
 	"encoding/hex"
 	"encoding/xml"
+	"errors"
 	"io"
 	"math/big"
 	"net/http"
 	"os"
 	"regexp"
+
 	"github.com/MISW/birdol-server/database"
 	"github.com/MISW/birdol-server/database/model"
 	"github.com/MISW/birdol-server/utils/response"
 	"github.com/gin-gonic/gin"
 )
 
-// PublicKey XML structure
+// RSA PublicKey
 type rsaPublicKey struct {
 	Modulus	string
 	Exponent string
@@ -28,13 +35,16 @@ type rsaPublicKey struct {
 	Main function
 */
 
+// Verify request using signature
 func RequestValidation() gin.HandlerFunc {
 	return func(ctx *gin.Context) {
 		// pick params from header
 		authorization := ctx.GetHeader("Authorization")
-		device_id := ctx.GetHeader("DeviceID")
-		signature_str := ctx.GetHeader("X-Birdol-Signature")
+		deviceId := ctx.GetHeader("DeviceID")
+		signatureStr := ctx.GetHeader("X-Birdol-Signature")
 		timestamp := ctx.GetHeader("X-Birdol-TimeStamp")
+		signatureAlgo := ctx.GetHeader("X-Birdol-Signature-Algo");
+
 		// Verify Authorization Header
 		reg := regexp.MustCompile(`Bearer (.+)$`)
 		if !reg.MatchString(authorization) {
@@ -42,47 +52,58 @@ func RequestValidation() gin.HandlerFunc {
 			ctx.Abort()
 			return
 		}
-		access_token := reg.FindStringSubmatch(authorization)[1]
+		accessToken := reg.FindStringSubmatch(authorization)[1]
 
 		// confirm accesstoken
-		var recv_token model.AccessToken
-		if err := database.Sqldb.Where("token = ?", access_token).First(&recv_token).Error; err != nil {
+		var recvToken model.AccessToken
+		if err := database.Sqldb.Where("token = ?", accessToken).First(&recvToken).Error; err != nil {
 			response.SetErrorResponse(ctx, http.StatusUnauthorized, response.ErrInvalidToken)
 			ctx.Abort()
 			return
 		}
 
-		if device_id != recv_token.DeviceID {
+		// Confirm device uuid
+		if deviceId != recvToken.DeviceID {
 			response.SetErrorResponse(ctx, http.StatusUnauthorized, response.ErrInvalidDevice)
 			ctx.Abort()
 			return
 		}
 
-		// Verify signature
-		encoded_xml_key := recv_token.PublicKey
-		public_key, err := parseXML(encoded_xml_key)
-		if err != nil {
-			response.SetErrorResponse(ctx, http.StatusInternalServerError, response.ErrFailParseXML)
-			ctx.Abort()
-			return
-		}
-		body_byte, _ := io.ReadAll(ctx.Request.Body)
-		ctx.Set("body_rawbyte", body_byte)
-		request_body := string(body_byte)
-
-		prefix := os.Getenv("API_VERSION")
-		signature_base := prefix + ":" + timestamp + ":" + request_body
-		hashed_base := sha512.Sum512([]byte(signature_base))
-		signature, _ := hex.DecodeString(signature_str)
-
-		verify_err := rsa.VerifyPKCS1v15(&public_key, crypto.SHA512, hashed_base[:], signature)
-		if verify_err != nil {
+		// Check signature algorithm
+		if signatureAlgo != recvToken.KeyType {
 			response.SetErrorResponse(ctx, http.StatusUnauthorized, response.ErrInvalidSignature)
 			ctx.Abort()
 			return
 		}
 
-		ctx.Set("access_token", recv_token)
+		// Create message for verification
+		bodyByte, _ := io.ReadAll(ctx.Request.Body)
+		ctx.Set("bodyByte", bodyByte)
+		requestBody := string(bodyByte)
+		prefix := os.Getenv("API_VERSION")
+		msg := prefix + ":" + timestamp + ":" + requestBody
+
+		// Verify
+		var verifyErr error
+		switch signatureAlgo {
+		case "rsa-1024":
+		case "rsa-2048":
+		case "rsa-4096":
+			verifyErr = verifyRsaSignature(msg, signatureStr, recvToken.PublicKey) 
+		case "ecdsa":
+			verifyErr = verifyEcdsaSignature(msg, signatureStr, recvToken.PublicKey)
+		default:
+			verifyErr = errors.New("invalid signature algorithm")
+		}
+
+		if verifyErr != nil {
+			response.SetErrorResponse(ctx, http.StatusUnauthorized, response.ErrInvalidSignature)
+			ctx.Abort()
+			return
+		}
+
+		// Set AccessToken struct to ctx
+		ctx.Set("access_token", recvToken)
 
 		ctx.Next()
 	}
@@ -91,6 +112,49 @@ func RequestValidation() gin.HandlerFunc {
 /*
 	Private functions
 */
+
+// Verify message signed with ECDSA Privatekey
+func verifyEcdsaSignature(msg string, sigStr string, pubKeyStr string) error {
+	pubKeyBlob, err := base64Decode(pubKeyStr)
+	if err != nil {
+		return err
+	}
+
+	pubKey, err := x509.ParsePKIXPublicKey(pubKeyBlob)
+	if err != nil {
+		return err
+	}
+
+	signature, err := base64Decode(sigStr) 
+	if err != nil {
+		return err
+	}
+
+	hashedMsg := sha512.Sum512([]byte(msg))
+
+	if !ecdsa.VerifyASN1(pubKey.(*ecdsa.PublicKey), hashedMsg[:], signature) {
+		return errors.New("invalid signature found")
+	}
+
+	return nil
+}
+
+// Verify message signed with RSA Privatekey
+func verifyRsaSignature(msg string, sigStr string, pubKeyStr string) error {
+	rsaPubKey, err := parseXML(pubKeyStr)
+	if err != nil {
+		return err
+	}
+
+	signature, err := hex.DecodeString(sigStr)
+	if err != nil {
+		return err
+	}
+
+	hashedMsg := sha512.Sum512([]byte(msg))
+
+	return rsa.VerifyPKCS1v15(&rsaPubKey, crypto.SHA512, hashedMsg[:], signature)
+}
 
 // decode base64 encoded string
 func base64Decode(str string) ([]byte, error) {
