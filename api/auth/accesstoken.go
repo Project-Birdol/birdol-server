@@ -4,9 +4,9 @@ import (
 	"log"
 	"time"
 
-	"github.com/MISW/birdol-server/database"
-	"github.com/MISW/birdol-server/database/model"
-	"github.com/MISW/birdol-server/utils/random"
+	"github.com/Project-Birdol/birdol-server/database"
+	"github.com/Project-Birdol/birdol-server/database/model"
+	"github.com/Project-Birdol/birdol-server/utils/random"
 	"gorm.io/gorm"
 	"gorm.io/gorm/clause"
 )
@@ -19,7 +19,7 @@ const (
 )
 
 // SetToken creates(or update) and save new token, returns access token as string
-func SetToken(userID uint, device_id string, public_key string) (string, string, error) {
+func SetToken(userID uint, device_id string, public_key string, keyType string) (string, string, error) {
 
 	// create rondom token id
 	token, err := random.GenerateRandomString(tokenIDsize)
@@ -41,12 +41,13 @@ func SetToken(userID uint, device_id string, public_key string) (string, string,
 		RefreshToken: refresh_token,
 		TokenUpdated: time.Now(),
 		PublicKey: public_key,
+		KeyType: keyType,
 	}
 
 	// Use "ON DUPLICATE KEY UPDATE"
 	if err := database.Sqldb.Clauses(clause.OnConflict{
 		Columns: []clause.Column{{Name: "device_id"}},
-		DoUpdates: clause.Assignments(map[string]interface{}{"token": token, "refresh_token": refresh_token, "token_updated": time.Now(), "public_key": public_key}),
+		DoUpdates: clause.Assignments(map[string]interface{}{"token": token, "refresh_token": refresh_token, "token_updated": time.Now(), "public_key": public_key, "key_type": keyType}),
 	}).Create(&new_token).Error; err != nil {
 		return "", "", err
 	}

@@ -1,12 +1,15 @@
-package middlewares
+/*
+Authrization middleware for gin
+*/
+package auth
 
 import (
 	"encoding/json"
 	"net/http"
 
-	"github.com/MISW/birdol-server/database"
-	"github.com/MISW/birdol-server/database/model"
-	"github.com/MISW/birdol-server/utils/response"
+	"github.com/Project-Birdol/birdol-server/database"
+	"github.com/Project-Birdol/birdol-server/database/model"
+	"github.com/Project-Birdol/birdol-server/utils/response"
 	"github.com/gin-gonic/gin"
 )
 

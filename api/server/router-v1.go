@@ -1,8 +1,9 @@
 package server
 
 import (
-	"github.com/MISW/birdol-server/controller"
-	"github.com/MISW/birdol-server/middlewares"
+	"github.com/Project-Birdol/birdol-server/controller"
+	authware "github.com/Project-Birdol/birdol-server/middlewares/auth"
+	"github.com/Project-Birdol/birdol-server/middlewares/security"
 	"github.com/gin-gonic/gin"
 )
 
@@ -20,10 +21,10 @@ func GetRouterV1() *gin.Engine {
 		}
 
 		auth := v1.Group("/auth")
-		auth.Use(middlewares.RequestValidation())
+		auth.Use(security.RequestValidation())
 		{
 			auth_root := auth.Group("")
-			auth_root.Use(middlewares.CheckToken())
+			auth_root.Use(authware.CheckToken())
 			{
 				auth_root.GET("", controller.TokenAuthorize()) // Login using Token
 				auth_root.DELETE("", controller.UnlinkAccount()) // Unlink Account

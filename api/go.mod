@@ -1,4 +1,4 @@
-module github.com/MISW/birdol-server
+module github.com/Project-Birdol/birdol-server
 
 go 1.19
 

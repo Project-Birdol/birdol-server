@@ -34,4 +34,7 @@ const (
 	ErrInvalidVersionString = "invalid_version_string"
 	ErrInvalidPlatform		= "invalid_platform"
 	ErrUpdateRequired		= "update_required"
+
+	ErrInvalidKeyType		= "invalid_keytype"
+	ErrInvalidKey			= "invalid_key"
 )

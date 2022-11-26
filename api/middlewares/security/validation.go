@@ -1,7 +1,7 @@
 /*
-Middlewares for gin
+Security middlewares for gin
 */
-package middlewares
+package security
 
 import (
 	"crypto"
@@ -19,10 +19,20 @@ import (
 	"os"
 	"regexp"
 
-	"github.com/MISW/birdol-server/database"
-	"github.com/MISW/birdol-server/database/model"
-	"github.com/MISW/birdol-server/utils/response"
+	"github.com/Project-Birdol/birdol-server/controller/jsonmodel"
+	"github.com/Project-Birdol/birdol-server/database"
+	"github.com/Project-Birdol/birdol-server/database/model"
+	"github.com/Project-Birdol/birdol-server/utils/response"
 	"github.com/gin-gonic/gin"
+	"github.com/gin-gonic/gin/binding"
+)
+
+// Keytype
+const (
+	Rsa1024 = "rsa-1024"
+	Rsa2048 = "rsa-2048"
+	Rsa4096 = "rsa-4096"
+	Ecdsa   = "ecdsa"
 )
 
 // RSA PublicKey
@@ -48,6 +58,7 @@ func RequestValidation() gin.HandlerFunc {
 		// Verify Authorization Header
 		reg := regexp.MustCompile(`Bearer (.+)$`)
 		if !reg.MatchString(authorization) {
+			
 			response.SetErrorResponse(ctx, http.StatusUnauthorized, response.ErrAuthorizationFail)
 			ctx.Abort()
 			return
@@ -71,14 +82,19 @@ func RequestValidation() gin.HandlerFunc {
 
 		// Check signature algorithm
 		if signatureAlgo != recvToken.KeyType {
-			response.SetErrorResponse(ctx, http.StatusUnauthorized, response.ErrInvalidSignature)
-			ctx.Abort()
-			return
+			// For backward compatibility, treat empty keytype as rsa1024
+			if signatureAlgo != Rsa1024 || recvToken.KeyType != "" {
+				response.SetErrorResponse(ctx, http.StatusUnauthorized, response.ErrInvalidSignature)
+				ctx.Abort()
+				return
+			} else {
+				signatureAlgo = Rsa1024
+			}
 		}
 
 		// Create message for verification
 		bodyByte, _ := io.ReadAll(ctx.Request.Body)
-		ctx.Set("bodyByte", bodyByte)
+		ctx.Set("body_rawbyte", bodyByte)
 		requestBody := string(bodyByte)
 		prefix := os.Getenv("API_VERSION")
 		msg := prefix + ":" + timestamp + ":" + requestBody
@@ -86,11 +102,11 @@ func RequestValidation() gin.HandlerFunc {
 		// Verify
 		var verifyErr error
 		switch signatureAlgo {
-		case "rsa-1024":
-		case "rsa-2048":
-		case "rsa-4096":
+		case Rsa1024:
+		case Rsa2048:
+		case Rsa4096:
 			verifyErr = verifyRsaSignature(msg, signatureStr, recvToken.PublicKey) 
-		case "ecdsa":
+		case Ecdsa:
 			verifyErr = verifyEcdsaSignature(msg, signatureStr, recvToken.PublicKey)
 		default:
 			verifyErr = errors.New("invalid signature algorithm")
@@ -104,6 +120,50 @@ func RequestValidation() gin.HandlerFunc {
 
 		// Set AccessToken struct to ctx
 		ctx.Set("access_token", recvToken)
+
+		ctx.Next()
+	}
+}
+
+// Inspect Publickey before registration
+func InspectPublicKey() gin.HandlerFunc {
+	return func(ctx *gin.Context) {
+		// Content Type
+		contentType := ctx.GetHeader("Content-Type")
+		if contentType != gin.MIMEJSON {
+			response.SetErrorResponse(ctx, http.StatusBadRequest, response.ErrInvalidType)
+			ctx.Abort()
+			return
+		}
+
+		// Extract key data from request body
+		var keyInfo jsonmodel.KeyInspectInfo
+		if err := ctx.ShouldBindBodyWith(&keyInfo, binding.JSON); err != nil {
+			response.SetErrorResponse(ctx, http.StatusBadRequest, response.ErrFailParseJSON)
+			ctx.Abort()
+			return
+		}
+
+		// Only ECDSA publickey is accepted for new device
+		if keyInfo.KeyType != Ecdsa {
+			response.SetErrorResponse(ctx, http.StatusBadRequest, response.ErrInvalidKeyType)
+			ctx.Abort()
+			return
+		}
+
+		// Import test
+		pubKeyBlob, err := base64Decode(keyInfo.PublicKey)
+		if err != nil {
+			response.SetErrorResponse(ctx, http.StatusBadRequest, response.ErrInvalidKey)
+			ctx.Abort()
+			return
+		}
+		_, err = x509.ParsePKIXPublicKey(pubKeyBlob)
+		if err != nil {
+			response.SetErrorResponse(ctx, http.StatusBadRequest, response.ErrInvalidKey)
+			ctx.Abort()
+			return
+		}
 
 		ctx.Next()
 	}

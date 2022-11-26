@@ -1,6 +1,6 @@
 package jsonmodel
 
-import "github.com/MISW/birdol-server/database/model"
+import "github.com/Project-Birdol/birdol-server/database/model"
 
 type GalleryChild struct {
 	MainCharacterId int `json:"id" binding:"required"`

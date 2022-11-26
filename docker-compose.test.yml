@@ -6,7 +6,7 @@ services:
       target: production
       dockerfile: Dockerfile
     environment:
-      GIN_MODE: release 
+      GIN_MODE: debug 
       DB_USER: ${MYSQL_USER}
       DB_PASSWORD: ${MYSQL_PASSWORD}
       DB_ADDRESS: db

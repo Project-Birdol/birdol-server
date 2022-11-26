@@ -11,6 +11,7 @@ type DataLinkRequest struct {
 	Password  string `json:"password" binding:"required"`
 	DeviceID  string `json:"device_id" binding:"required"`
 	PublicKey string `json:"public_key" binding:"required"`
+	KeyType	  string `json:"key_type" binding:"required"`
 }
 
 type AuthLogoutRequest struct {

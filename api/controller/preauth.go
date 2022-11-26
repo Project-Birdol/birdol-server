@@ -6,10 +6,10 @@ import (
 	"strconv"
 	"strings"
 
-	"github.com/MISW/birdol-server/controller/jsonmodel"
-	"github.com/MISW/birdol-server/database"
-	"github.com/MISW/birdol-server/database/model"
-	"github.com/MISW/birdol-server/utils/response"
+	"github.com/Project-Birdol/birdol-server/controller/jsonmodel"
+	"github.com/Project-Birdol/birdol-server/database"
+	"github.com/Project-Birdol/birdol-server/database/model"
+	"github.com/Project-Birdol/birdol-server/utils/response"
 	"github.com/gin-gonic/gin"
 )
 

@@ -4,8 +4,8 @@ import (
 	"crypto/sha256"
 	"encoding/hex"
 	"time"
-	"github.com/MISW/birdol-server/database"
-	"github.com/MISW/birdol-server/database/model"
+	"github.com/Project-Birdol/birdol-server/database"
+	"github.com/Project-Birdol/birdol-server/database/model"
 	"gorm.io/gorm/clause"
 )
 

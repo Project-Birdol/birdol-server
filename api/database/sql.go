@@ -6,7 +6,7 @@ import (
 	"gorm.io/gorm"
 	"gorm.io/gorm/logger"
 	"gorm.io/driver/mysql"
-	"github.com/MISW/birdol-server/database/model"
+	"github.com/Project-Birdol/birdol-server/database/model"
 	"os"
 )
 

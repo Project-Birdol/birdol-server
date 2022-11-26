@@ -3,8 +3,8 @@ package main
 import (
 	"log"
 	"os"
-	"github.com/MISW/birdol-server/database"
-	"github.com/MISW/birdol-server/server"
+	"github.com/Project-Birdol/birdol-server/database"
+	"github.com/Project-Birdol/birdol-server/server"
 	"github.com/gin-gonic/gin"
 )
 

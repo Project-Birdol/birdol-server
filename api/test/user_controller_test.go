@@ -7,9 +7,9 @@ import (
 	"net/http/httptest"
 	"testing"
 
-	"github.com/MISW/birdol-server/controller"
-	"github.com/MISW/birdol-server/controller/jsonmodel"
-	"github.com/MISW/birdol-server/database"
+	"github.com/Project-Birdol/birdol-server/controller"
+	"github.com/Project-Birdol/birdol-server/controller/jsonmodel"
+	"github.com/Project-Birdol/birdol-server/database"
 	"github.com/gin-gonic/gin"
 )
 

@@ -5,13 +5,14 @@ import (
 	"net/http"
 	"time"
 
-	"github.com/MISW/birdol-server/auth"
-	"github.com/MISW/birdol-server/controller/jsonmodel"
-	"github.com/MISW/birdol-server/database"
-	"github.com/MISW/birdol-server/database/model"
-	"github.com/MISW/birdol-server/utils/response"
-	"github.com/MISW/birdol-server/utils/random"
+	"github.com/Project-Birdol/birdol-server/auth"
+	"github.com/Project-Birdol/birdol-server/controller/jsonmodel"
+	"github.com/Project-Birdol/birdol-server/database"
+	"github.com/Project-Birdol/birdol-server/database/model"
+	"github.com/Project-Birdol/birdol-server/utils/random"
+	"github.com/Project-Birdol/birdol-server/utils/response"
 	"github.com/gin-gonic/gin"
+	"github.com/gin-gonic/gin/binding"
 )
 
 // 新規ユーザ登録
@@ -27,7 +28,7 @@ func HandleSignUp() gin.HandlerFunc {
 
 		// parse json
 		var request_body jsonmodel.SignupUserRequest
-		if err := ctx.ShouldBindJSON(&request_body); err != nil {
+		if err := ctx.ShouldBindBodyWith(&request_body, binding.JSON); err != nil {
 			response.SetErrorResponse(ctx, http.StatusBadRequest, response.ErrFailParseJSON)
 			return
 		}
@@ -52,7 +53,7 @@ func HandleSignUp() gin.HandlerFunc {
 		}
 
 		// アクセストークンを生成
-		token, refresh_token, err := auth.SetToken(new_user.ID, request_body.DeviceID, request_body.PublicKey)
+		token, refresh_token, err := auth.SetToken(new_user.ID, request_body.DeviceID, request_body.PublicKey, request_body.KeyType)
 		if err != nil {
 			response.SetErrorResponse(ctx, http.StatusInternalServerError, response.ErrFailAccountCreation)
 			return
@@ -83,7 +84,7 @@ func LinkAccount() gin.HandlerFunc {
 
 		// parse json
 		var request_body jsonmodel.DataLinkRequest
-		if err := ctx.ShouldBindJSON(&request_body); err != nil {
+		if err := ctx.ShouldBindBodyWith(&request_body, binding.JSON); err != nil {
 			log.Println(err)
 			response.SetErrorResponse(ctx, http.StatusBadRequest, response.ErrFailParseJSON)
 			return
@@ -119,7 +120,7 @@ func LinkAccount() gin.HandlerFunc {
 		}
 
 		// access token の生成及び保存
-		token, refresh_token, err := auth.SetToken(u.ID, request_body.DeviceID, request_body.PublicKey)
+		token, refresh_token, err := auth.SetToken(u.ID, request_body.DeviceID, request_body.PublicKey, request_body.KeyType)
 		if err != nil {
 			log.Println(err)
 			response.SetErrorResponse(ctx, http.StatusInternalServerError, response.ErrFailDataLink)

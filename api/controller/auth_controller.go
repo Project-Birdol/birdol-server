@@ -6,11 +6,11 @@ import (
 	"net/http"
 	"time"
 
-	"github.com/MISW/birdol-server/auth"
-	"github.com/MISW/birdol-server/controller/jsonmodel"
-	"github.com/MISW/birdol-server/database"
-	"github.com/MISW/birdol-server/database/model"
-	"github.com/MISW/birdol-server/utils/response"
+	"github.com/Project-Birdol/birdol-server/auth"
+	"github.com/Project-Birdol/birdol-server/controller/jsonmodel"
+	"github.com/Project-Birdol/birdol-server/database"
+	"github.com/Project-Birdol/birdol-server/database/model"
+	"github.com/Project-Birdol/birdol-server/utils/response"
 	"github.com/gin-gonic/gin"
 )
 
@@ -138,7 +138,7 @@ func RefreshToken() gin.HandlerFunc {
 			return
 		}
 				
-		new_token, new_refresh, err := auth.SetToken(token_info.UserID, token_info.DeviceID, token_info.PublicKey)
+		new_token, new_refresh, err := auth.SetToken(token_info.UserID, token_info.DeviceID, token_info.PublicKey, token_info.KeyType)
 		if err != nil {
 			response.SetErrorResponse(ctx, http.StatusInternalServerError, response.ErrFailRefresh)
 			return

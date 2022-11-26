@@ -1,8 +1,9 @@
 package server
 
 import (
-	"github.com/MISW/birdol-server/controller"
-	"github.com/MISW/birdol-server/middlewares"
+	"github.com/Project-Birdol/birdol-server/controller"
+	authware "github.com/Project-Birdol/birdol-server/middlewares/auth"
+	"github.com/Project-Birdol/birdol-server/middlewares/security"
 	"github.com/gin-gonic/gin"
 )
 
@@ -19,16 +20,17 @@ func GetRouterV2() *gin.Engine {
 		}
 		
 		user := v2.Group("/user")
+		user.Use(security.InspectPublicKey())
 		{
 			user.PUT("", controller.HandleSignUp())
 			user.POST("", controller.LinkAccount())
 		}
 
 		auth := v2.Group("/auth")
-		auth.Use(middlewares.RequestValidation())
+		auth.Use(security.RequestValidation())
 		{
 			auth_root := auth.Group("")
-			auth_root.Use(middlewares.CheckToken())
+			auth_root.Use(authware.CheckToken())
 			{
 				auth_root.GET("", controller.TokenAuthorize()) // Login using Token
 				auth_root.DELETE("", controller.UnlinkAccount()) // Unlink Account
@@ -37,18 +39,18 @@ func GetRouterV2() *gin.Engine {
 		}
 		
 		refresh := v2.Group("/refresh")
-		refresh.Use(middlewares.RequestValidation())
+		refresh.Use(security.RequestValidation())
 		{
 			refresh.GET("", controller.RefreshToken()) // Token Refresh
 		}
 
 		gamedata := v2.Group("/gamedata")
-		gamedata.Use(middlewares.RequestValidation())
-		gamedata.Use(middlewares.CheckToken())
+		gamedata.Use(security.RequestValidation())
+		gamedata.Use(authware.CheckToken())
 		{
 			// UNIMPLEMENTED
 			gamedata_nobody := gamedata.Group("")
-			gamedata_nobody.Use(middlewares.ReadSessionIDfromQuery())
+			gamedata_nobody.Use(authware.ReadSessionIDfromQuery())
 			{
 				// Requests that have no body
 				gamedata_nobody.GET("/gallery", controller.GetGalleryInfo())
@@ -58,7 +60,7 @@ func GetRouterV2() *gin.Engine {
 				
 			}
 			gamedata_body := gamedata.Group("")
-			gamedata_body.Use(middlewares.ReadSessionIDfromBody())
+			gamedata_body.Use(authware.ReadSessionIDfromBody())
 			{
 				// Requests that have body
 				gamedata_body.PUT("/complete", controller.FinishProgress())
