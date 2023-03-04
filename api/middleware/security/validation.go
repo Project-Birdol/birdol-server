@@ -13,6 +13,7 @@ import (
 	"encoding/hex"
 	"encoding/xml"
 	"errors"
+	"github.com/Project-Birdol/birdol-server/model"
 	"gorm.io/gorm"
 	"io"
 	"math/big"
@@ -21,7 +22,6 @@ import (
 	"regexp"
 
 	"github.com/Project-Birdol/birdol-server/controller/jsonmodel"
-	"github.com/Project-Birdol/birdol-server/database/model"
 	"github.com/Project-Birdol/birdol-server/utils/response"
 	"github.com/gin-gonic/gin"
 	"github.com/gin-gonic/gin/binding"

@@ -1,10 +1,10 @@
 package auth
 
 import (
+	"github.com/Project-Birdol/birdol-server/model"
 	"log"
 	"time"
 
-	"github.com/Project-Birdol/birdol-server/database/model"
 	"github.com/Project-Birdol/birdol-server/utils/random"
 	"gorm.io/gorm"
 	"gorm.io/gorm/clause"

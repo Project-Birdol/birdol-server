@@ -1,7 +1,7 @@
 package database
 
 import (
-	"github.com/Project-Birdol/birdol-server/database/model"
+	model2 "github.com/Project-Birdol/birdol-server/model"
 	"gorm.io/driver/mysql"
 	"gorm.io/gorm"
 	"gorm.io/gorm/logger"
@@ -24,14 +24,14 @@ func InitializeDB() *gorm.DB {
 }
 
 func MigrateDB(db *gorm.DB) {
-	db.AutoMigrate(&model.User{})
-	db.AutoMigrate(&model.AccessToken{})
-	db.AutoMigrate(&model.Session{})
-	db.AutoMigrate(&model.StoryProgress{})
-	db.AutoMigrate(&model.CharacterProgress{})
-	db.AutoMigrate(&model.Teacher{})
-	db.AutoMigrate(&model.CompletedProgress{})
-	db.AutoMigrate(&model.ValidClient{})
+	db.AutoMigrate(&model2.User{})
+	db.AutoMigrate(&model2.AccessToken{})
+	db.AutoMigrate(&model2.Session{})
+	db.AutoMigrate(&model2.StoryProgress{})
+	db.AutoMigrate(&model2.CharacterProgress{})
+	db.AutoMigrate(&model2.Teacher{})
+	db.AutoMigrate(&model2.CompletedProgress{})
+	db.AutoMigrate(&model2.ValidClient{})
 }
 
 func getGormInstance() *gorm.DB {

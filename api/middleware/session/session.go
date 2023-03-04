@@ -5,11 +5,11 @@ package middleware
 
 import (
 	"encoding/json"
+	model2 "github.com/Project-Birdol/birdol-server/model"
 	"gorm.io/gorm"
 	"net/http"
 	"time"
 
-	"github.com/Project-Birdol/birdol-server/database/model"
 	"github.com/Project-Birdol/birdol-server/utils/response"
 	"github.com/gin-gonic/gin"
 )
@@ -26,7 +26,7 @@ type SessionMiddleware struct {
 func (sm *SessionMiddleware) ReadSessionIDfromQuery() gin.HandlerFunc {
 	return func(ctx *gin.Context) {
 		token_interface, _ := ctx.Get("access_token")
-		token_info := token_interface.(model.AccessToken)
+		token_info := token_interface.(model2.AccessToken)
 
 		access_token := token_info.Token
 		session_id := ctx.Query("session_id")
@@ -44,7 +44,7 @@ func (sm *SessionMiddleware) ReadSessionIDfromQuery() gin.HandlerFunc {
 func (sm *SessionMiddleware) ReadSessionIDfromBody() gin.HandlerFunc {
 	return func(ctx *gin.Context) {
 		token_interface, _ := ctx.Get("access_token")
-		token_info := token_interface.(model.AccessToken)
+		token_info := token_interface.(model2.AccessToken)
 		access_token := token_info.Token
 
 		content_type := ctx.GetHeader("Content-Type")
@@ -77,7 +77,7 @@ func (sm *SessionMiddleware) ReadSessionIDfromBody() gin.HandlerFunc {
 func (sm *SessionMiddleware) CheckToken() gin.HandlerFunc {
 	return func(ctx *gin.Context) {
 		token_interface, _ := ctx.Get("access_token")
-		token_info := token_interface.(model.AccessToken)
+		token_info := token_interface.(model2.AccessToken)
 
 		if time.Since(token_info.TokenUpdated).Seconds() > 604800-300 {
 			response.SetNormalResponse(ctx, http.StatusAccepted, response.ResultNeedTokenRefresh)
@@ -89,7 +89,7 @@ func (sm *SessionMiddleware) CheckToken() gin.HandlerFunc {
 }
 
 func (sm *SessionMiddleware) sessionValidityCheck(session_id string, access_token string) bool {
-	var session model.Session
+	var session model2.Session
 	if err := sm.DB.Where("session_id = ? AND access_token = ?", session_id, access_token).First(&session).Error; err != nil {
 		return false
 	}

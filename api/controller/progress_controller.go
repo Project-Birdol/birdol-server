@@ -4,7 +4,7 @@ import (
 	"encoding/json"
 	"errors"
 	"github.com/Project-Birdol/birdol-server/controller/jsonmodel"
-	"github.com/Project-Birdol/birdol-server/database/model"
+	"github.com/Project-Birdol/birdol-server/model"
 	res_util "github.com/Project-Birdol/birdol-server/utils/response"
 	"github.com/gin-gonic/gin"
 	"gorm.io/gorm"

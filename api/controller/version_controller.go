@@ -1,6 +1,7 @@
 package controller
 
 import (
+	"github.com/Project-Birdol/birdol-server/model"
 	"gorm.io/gorm"
 	"log"
 	"net/http"
@@ -8,7 +9,6 @@ import (
 	"strings"
 
 	"github.com/Project-Birdol/birdol-server/controller/jsonmodel"
-	"github.com/Project-Birdol/birdol-server/database/model"
 	"github.com/Project-Birdol/birdol-server/utils/response"
 	"github.com/gin-gonic/gin"
 )

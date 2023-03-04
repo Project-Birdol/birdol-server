@@ -2,6 +2,7 @@ package controller
 
 import (
 	"encoding/json"
+	"github.com/Project-Birdol/birdol-server/model"
 	"github.com/Project-Birdol/birdol-server/utils/hash"
 	"gorm.io/gorm"
 	"log"
@@ -10,7 +11,6 @@ import (
 
 	"github.com/Project-Birdol/birdol-server/auth"
 	"github.com/Project-Birdol/birdol-server/controller/jsonmodel"
-	"github.com/Project-Birdol/birdol-server/database/model"
 	"github.com/Project-Birdol/birdol-server/utils/response"
 	"github.com/gin-gonic/gin"
 )

@@ -3,7 +3,7 @@ package auth
 import (
 	"crypto/sha256"
 	"encoding/hex"
-	"github.com/Project-Birdol/birdol-server/database/model"
+	"github.com/Project-Birdol/birdol-server/model"
 	"gorm.io/gorm"
 	"gorm.io/gorm/clause"
 	"time"
