@@ -19,14 +19,8 @@ TOOL_BIN="./verify-test-tool/bin/Release/net7.0/linux-x64/birdolcrypto"
 # Generate RSA Key
 echo "[Key Generation Benchmark]"
 echo ">> Generating ECDSA Key..."
-PUBKEY_A=$(time $TOOL_BIN keygen /tmp/key-a ecdsa)
-PUBKEY_A=$(echo "$PUBKEY_A" | base64 -w 0)
-PUBKEY_B=$(time $TOOL_BIN keygen /tmp/key-b ecdsa)
-PUBKEY_B=$(echo "$PUBKEY_B" | base64 -w 0)
-echo ">> Generating RSA-1024 Key..."
-PUBKEY_RSA=$(time $TOOL_BIN keygen /tmp/key-rsa rsa-1024)
-echo ">> Generating RSA-4096 Key..."
-time $TOOL_BIN keygen /tmp/key-rsa4096 rsa-4096
+PUBKEY_A=$($TOOL_BIN keygen /tmp/key-a ecdsa | base64 -w 0)
+PUBKEY_B=$($TOOL_BIN keygen /tmp/key-b ecdsa | base64 -w 0)
 
 echo "[API Testing Process]"
 
@@ -34,7 +28,6 @@ echo "[API Testing Process]"
 echo ">> Generating UUID..."
 UUID_A=$("$TOOL_BIN" uuid)
 UUID_B=$("$TOOL_BIN" uuid)
-UUID_RSA=$("$TOOL_BIN" uuid)
 
 # Run Test 1: CreateAccount - DeviceA
 echo "> Test 1: CreateAccount - DeviceA"
@@ -49,6 +42,7 @@ echo ">> Passed"
 echo "> Test 2: LoginWithToken - DeviceA"
 TS=$(date '+%Y-%m-%d-%H-%M-%S')
 SIG=$("$TOOL_BIN" sign "v2:$TS:" ecdsa /tmp/key-a.priv | base64 -w 0)
+echo "$SIG" | base64 -d
 
 newman run collection.json -e environment_tmp.json \
     --folder LoginWithToken \
