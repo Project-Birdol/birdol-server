@@ -23,7 +23,7 @@ jobs:
         run: sudo npm install -g newman
         
       - name: Setup jq
-        run: sudo apt install jq
+        run: sudo apt update && sudo apt install -y jq
 
       - name: Setup .NET SDK
         uses: actions/setup-dotnet@v3
@@ -47,6 +47,11 @@ jobs:
             Dockerfile
             docker-compose.*
             ci/**
+
+      - name: Build keytool
+        run: ./build.sh
+        if: steps.changed-files.outputs.any_changed == 'true'
+        working-directory: ./ci/verify-test-tool
 
       - name: Build Docker image and run docker container
         run: docker-compose -f docker-compose.test.yml up -d
