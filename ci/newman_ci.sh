@@ -20,7 +20,9 @@ TOOL_BIN="./verify-test-tool/bin/Release/net7.0/linux-x64/birdolcrypto"
 echo "[Key Generation Benchmark]"
 echo ">> Generating ECDSA Key..."
 PUBKEY_A=$(time $TOOL_BIN keygen /tmp/key-a ecdsa)
+PUBKEY_A=$(echo "$PUBKEY_A" | base64 -w 0)
 PUBKEY_B=$(time $TOOL_BIN keygen /tmp/key-b ecdsa)
+PUBKEY_B=$(echo "$PUBKEY_B" | base64 -w 0)
 echo ">> Generating RSA-1024 Key..."
 PUBKEY_RSA=$(time $TOOL_BIN keygen /tmp/key-rsa rsa-1024)
 echo ">> Generating RSA-4096 Key..."
@@ -46,7 +48,7 @@ echo ">> Passed"
 # Run Test 2: LoginWithToken - DeviceA
 echo "> Test 2: LoginWithToken - DeviceA"
 TS=$(date '+%Y-%m-%d-%H-%M-%S')
-SIG=$("$TOOL_BIN" sign "v2:$TS:" ecdsa /tmp/key-a.priv | base64)
+SIG=$("$TOOL_BIN" sign "v2:$TS:" ecdsa /tmp/key-a.priv | base64 -w 0)
 
 newman run collection.json -e environment_tmp.json \
     --folder LoginWithToken \
@@ -62,7 +64,7 @@ BODY=$(jq -r '.item[].item[0].item[2].request.body.raw' < collection.json)
 BODY=${BODY//"{{LINK_PASSWORD}}/$PASS"}
 
 TS=$(date '+%Y-%m-%d-%H-%M-%S')
-SIG=$("$TOOL_BIN" sign "v2:$TS:$BODY" ecdsa /tmp/key-a.priv | base64)
+SIG=$("$TOOL_BIN" sign "v2:$TS:$BODY" ecdsa /tmp/key-a.priv | base64 -w 0)
 
 newman run collection.json -e environment_tmp.json \
     --folder SetDataLink \
@@ -74,7 +76,7 @@ echo ">> Passed"
 # Run Test 4: Refresh Token - DeviceA
 echo "> Test 4: Refresh Token - DeviceA"
 TS=$(date '+%Y-%m-%d-%H-%M-%S')
-SIG=$("$TOOL_BIN" sign "v2:$TS:" ecdsa /tmp/key-a.priv | base64)
+SIG=$("$TOOL_BIN" sign "v2:$TS:" ecdsa /tmp/key-a.priv | base64 -w 0)
 
 newman run collection.json -e environment_tmp.json \
     --folder RefreshToken \
@@ -95,7 +97,7 @@ echo ">> Passed"
 # Run Test 6: LoginWithToken - DeviceB
 echo "> Test 6: LoginWithToken - DeviceB"
 TS=$(date '+%Y-%m-%d-%H-%M-%S')
-SIG=$("$TOOL_BIN" sign ecdsa "v2:$TS:" /tmp/key-b.priv | base64)
+SIG=$("$TOOL_BIN" sign ecdsa "v2:$TS:" /tmp/key-b.priv | base64 -w 0)
 
 newman run collection.json -e environment_tmp.json \
     --folder LoginWithTokenB \
@@ -111,7 +113,7 @@ BODY=$(jq -r '.item[].item[1].item[2].request.body.raw' < collection.json)
 BODY=${BODY//"{{LINK_PASSWORD}}/$PASS"}
 
 TS=$(date '+%Y-%m-%d-%H-%M-%S')
-SIG=$("$TOOL_BIN" sign "v2:$TS:$BODY" ecdsa /tmp/key-b.priv | base64)
+SIG=$("$TOOL_BIN" sign "v2:$TS:$BODY" ecdsa /tmp/key-b.priv | base64 -w 0)
 
 newman run collection.json -e environment_tmp.json \
     --folder SetDataLinkB \
@@ -123,7 +125,7 @@ echo ">> Passed"
 # Run Test 8: Refresh Token - DeviceB
 echo "> Test 8: Refresh Token - DeviceB"
 TS=$(date '+%Y-%m-%d-%H-%M-%S')
-SIG=$($TOOL_BIN sign "v2:$TS:" ecdsa /tmp/key-b.priv | base64)
+SIG=$($TOOL_BIN sign "v2:$TS:" ecdsa /tmp/key-b.priv | base64 -w 0)
 
 newman run collection.json -e environment_tmp.json \
     --folder RefreshTokenB \
