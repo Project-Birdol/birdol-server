@@ -156,21 +156,18 @@ func InspectPublicKey() gin.HandlerFunc {
 		// Import test
 		pubKeyStr, err := base64Decode(keyInfo.PublicKey)
 		if err != nil {
-			log.Println("error: base64 decode error", err)
 			response.SetErrorResponse(ctx, http.StatusBadRequest, response.ErrInvalidKey)
 			ctx.Abort()
 			return
 		}
 		pubKeyBlob, err := hex.DecodeString(string(pubKeyStr))
 		if err != nil {
-			log.Println("error: hexstring decode error", err)
 			response.SetErrorResponse(ctx, http.StatusBadRequest, response.ErrInvalidKey)
 			ctx.Abort()
 			return
 		}
 		_, err = x509.ParsePKIXPublicKey(pubKeyBlob)
 		if err != nil {
-			log.Println("error: key import error", err)
 			response.SetErrorResponse(ctx, http.StatusBadRequest, response.ErrInvalidKey)
 			ctx.Abort()
 			return
@@ -187,7 +184,12 @@ func InspectPublicKey() gin.HandlerFunc {
 
 // Verify message signed with ECDSA Privatekey
 func verifyEcdsaSignature(msg string, sigStr string, pubKeyStr string) error {
-	pubKeyBlob, err := base64Decode(pubKeyStr)
+	pubKeyHexStr, err := base64Decode(pubKeyStr)
+	if err != nil {
+		return err
+	}
+
+	pubKeyBlob, err := hex.DecodeString(string(pubKeyHexStr))
 	if err != nil {
 		return err
 	}
@@ -197,14 +199,19 @@ func verifyEcdsaSignature(msg string, sigStr string, pubKeyStr string) error {
 		return err
 	}
 
-	signature, err := base64Decode(sigStr) 
+	signatureHexStr, err := base64Decode(sigStr) 
+	if err != nil {
+		return err
+	}
+
+	signature, err := hex.DecodeString(string(signatureHexStr))
 	if err != nil {
 		return err
 	}
 
 	hashedMsg := sha512.Sum512([]byte(msg))
 
-	if !ecdsa.VerifyASN1(pubKey.(*ecdsa.PublicKey), hashedMsg[:], signature) {
+	if ecdsa.VerifyASN1(pubKey.(*ecdsa.PublicKey), hashedMsg[:], signature) {
 		return errors.New("invalid signature found")
 	}
 
