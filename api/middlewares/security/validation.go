@@ -14,6 +14,7 @@ import (
 	"encoding/xml"
 	"errors"
 	"io"
+	"log"
 	"math/big"
 	"net/http"
 	"os"
@@ -128,6 +129,7 @@ func RequestValidation() gin.HandlerFunc {
 // Inspect Publickey before registration
 func InspectPublicKey() gin.HandlerFunc {
 	return func(ctx *gin.Context) {
+		log.SetPrefix("[InspectPublicKey]")
 		// Content Type
 		contentType := ctx.GetHeader("Content-Type")
 		if contentType != gin.MIMEJSON {
@@ -152,19 +154,29 @@ func InspectPublicKey() gin.HandlerFunc {
 		}
 
 		// Import test
-		pubKeyBlob, err := base64Decode(keyInfo.PublicKey)
+		pubKeyStr, err := base64Decode(keyInfo.PublicKey)
 		if err != nil {
+			log.Println("error: base64 decode error", err)
+			response.SetErrorResponse(ctx, http.StatusBadRequest, response.ErrInvalidKey)
+			ctx.Abort()
+			return
+		}
+		pubKeyBlob, err := hex.DecodeString(string(pubKeyStr))
+		if err != nil {
+			log.Println("error: hexstring decode error", err)
 			response.SetErrorResponse(ctx, http.StatusBadRequest, response.ErrInvalidKey)
 			ctx.Abort()
 			return
 		}
 		_, err = x509.ParsePKIXPublicKey(pubKeyBlob)
 		if err != nil {
+			log.Println("error: key import error", err)
 			response.SetErrorResponse(ctx, http.StatusBadRequest, response.ErrInvalidKey)
 			ctx.Abort()
 			return
 		}
 
+		log.Println("inspection passed.")
 		ctx.Next()
 	}
 }
