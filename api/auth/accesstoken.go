@@ -4,7 +4,6 @@ import (
 	"log"
 	"time"
 
-	"github.com/Project-Birdol/birdol-server/database"
 	"github.com/Project-Birdol/birdol-server/database/model"
 	"github.com/Project-Birdol/birdol-server/utils/random"
 	"gorm.io/gorm"
@@ -12,14 +11,18 @@ import (
 )
 
 const (
-	tokenIDsize = 32
-	refreshTokenSize = 16
-	tokenExpireSeconds = 604800 // 604800[s] = 1[week], int64
-	deleteExpiredTokenIntervalSeconds = 86400 // 86400[s] = 1[day]
+	tokenIDsize                       = 32
+	refreshTokenSize                  = 16
+	tokenExpireSeconds                = 604800 // 604800[s] = 1[week], int64
+	deleteExpiredTokenIntervalSeconds = 86400  // 86400[s] = 1[day]
 )
 
+type TokenManager struct {
+	DB *gorm.DB
+}
+
 // SetToken creates(or update) and save new token, returns access token as string
-func SetToken(userID uint, device_id string, public_key string, keyType string) (string, string, error) {
+func (tm *TokenManager) SetToken(userID uint, device_id string, public_key string, keyType string) (string, string, error) {
 
 	// create rondom token id
 	token, err := random.GenerateRandomString(tokenIDsize)
@@ -33,20 +36,20 @@ func SetToken(userID uint, device_id string, public_key string, keyType string) 
 		log.Println("failed to generate rondom string:", err)
 		return "", "", err
 	}
-	
-	new_token := model.AccessToken {
-		UserID: userID,
-		DeviceID: device_id,
-		Token: token,
+
+	new_token := model.AccessToken{
+		UserID:       userID,
+		DeviceID:     device_id,
+		Token:        token,
 		RefreshToken: refresh_token,
 		TokenUpdated: time.Now(),
-		PublicKey: public_key,
-		KeyType: keyType,
+		PublicKey:    public_key,
+		KeyType:      keyType,
 	}
 
 	// Use "ON DUPLICATE KEY UPDATE"
-	if err := database.Sqldb.Clauses(clause.OnConflict{
-		Columns: []clause.Column{{Name: "device_id"}},
+	if err := tm.DB.Clauses(clause.OnConflict{
+		Columns:   []clause.Column{{Name: "device_id"}},
 		DoUpdates: clause.Assignments(map[string]interface{}{"token": token, "refresh_token": refresh_token, "token_updated": time.Now(), "public_key": public_key, "key_type": keyType}),
 	}).Create(&new_token).Error; err != nil {
 		return "", "", err
@@ -56,17 +59,17 @@ func SetToken(userID uint, device_id string, public_key string, keyType string) 
 }
 
 // DeleteToken delete stored access token
-func DeleteToken(token string, device_id string) error {
+func (tm *TokenManager) DeleteToken(token string, device_id string) error {
 
 	// dbからTokenが保存されているか否か
 	var c int64
-	database.Sqldb.Model(&model.AccessToken{}).Where("token = ? AND device_id = ?", token, device_id).Count(&c)
+	tm.DB.Model(&model.AccessToken{}).Where("token = ? AND device_id = ?", token, device_id).Count(&c)
 	if c == 0 {
 		return gorm.ErrRecordNotFound
 	}
 
 	// delete
-	if err := database.Sqldb.Where("token = ? AND device_id = ?", token, device_id).Delete(&model.AccessToken{}).Error; err != nil {
+	if err := tm.DB.Where("token = ? AND device_id = ?", token, device_id).Delete(&model.AccessToken{}).Error; err != nil {
 		return err
 	}
 
@@ -74,20 +77,20 @@ func DeleteToken(token string, device_id string) error {
 }
 
 // StartDeleteExpiredTokens delete tokens if they are expired
-func StartDeleteExpiredTokens() {
+func (tm *TokenManager) StartDeleteExpiredTokens() {
 	go func() {
 		for {
 			time.Sleep(time.Second * deleteExpiredTokenIntervalSeconds)
-			deleteAllExpiredtokens()
+			tm.deleteAllExpiredtokens()
 		}
 	}()
 }
 
 // deleteAllExpiredtokens delete all expired tokens in database
-func deleteAllExpiredtokens() {
+func (tm *TokenManager) deleteAllExpiredtokens() {
 
 	t := time.Now().Add(-1 * tokenExpireSeconds * time.Second)
-	if err := database.Sqldb.Where("token_updated < ?", t).Delete(&model.AccessToken{}); err != nil {
+	if err := tm.DB.Where("token_updated < ?", t).Delete(&model.AccessToken{}); err != nil {
 		log.Println(err)
 	}
 	log.Println("Delete all expired access tokens...")

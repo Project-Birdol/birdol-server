@@ -1,7 +1,7 @@
 /*
-Security middlewares for gin
+Security middleware for gin
 */
-package security
+package middleware
 
 import (
 	"crypto"
@@ -13,6 +13,7 @@ import (
 	"encoding/hex"
 	"encoding/xml"
 	"errors"
+	"gorm.io/gorm"
 	"io"
 	"math/big"
 	"net/http"
@@ -20,7 +21,6 @@ import (
 	"regexp"
 
 	"github.com/Project-Birdol/birdol-server/controller/jsonmodel"
-	"github.com/Project-Birdol/birdol-server/database"
 	"github.com/Project-Birdol/birdol-server/database/model"
 	"github.com/Project-Birdol/birdol-server/utils/response"
 	"github.com/gin-gonic/gin"
@@ -37,7 +37,7 @@ const (
 
 // RSA PublicKey
 type rsaPublicKey struct {
-	Modulus	string
+	Modulus  string
 	Exponent string
 }
 
@@ -45,20 +45,24 @@ type rsaPublicKey struct {
 	Main function
 */
 
+type SecurityMiddleware struct {
+	DB *gorm.DB
+}
+
 // Verify request using signature
-func RequestValidation() gin.HandlerFunc {
+func (sm *SecurityMiddleware) RequestValidation() gin.HandlerFunc {
 	return func(ctx *gin.Context) {
 		// pick params from header
 		authorization := ctx.GetHeader("Authorization")
 		deviceId := ctx.GetHeader("DeviceID")
 		signatureStr := ctx.GetHeader("X-Birdol-Signature")
 		timestamp := ctx.GetHeader("X-Birdol-TimeStamp")
-		signatureAlgo := ctx.GetHeader("X-Birdol-Signature-Algo");
+		signatureAlgo := ctx.GetHeader("X-Birdol-Signature-Algo")
 
 		// Verify Authorization Header
 		reg := regexp.MustCompile(`Bearer (.+)$`)
 		if !reg.MatchString(authorization) {
-			
+
 			response.SetErrorResponse(ctx, http.StatusUnauthorized, response.ErrAuthorizationFail)
 			ctx.Abort()
 			return
@@ -67,7 +71,7 @@ func RequestValidation() gin.HandlerFunc {
 
 		// confirm accesstoken
 		var recvToken model.AccessToken
-		if err := database.Sqldb.Where("token = ?", accessToken).First(&recvToken).Error; err != nil {
+		if err := sm.DB.Where("token = ?", accessToken).First(&recvToken).Error; err != nil {
 			response.SetErrorResponse(ctx, http.StatusUnauthorized, response.ErrInvalidToken)
 			ctx.Abort()
 			return
@@ -105,9 +109,9 @@ func RequestValidation() gin.HandlerFunc {
 		case Rsa1024:
 		case Rsa2048:
 		case Rsa4096:
-			verifyErr = verifyRsaSignature(msg, signatureStr, recvToken.PublicKey) 
+			verifyErr = sm.verifyRsaSignature(msg, signatureStr, recvToken.PublicKey)
 		case Ecdsa:
-			verifyErr = verifyEcdsaSignature(msg, signatureStr, recvToken.PublicKey)
+			verifyErr = sm.verifyEcdsaSignature(msg, signatureStr, recvToken.PublicKey)
 		default:
 			verifyErr = errors.New("invalid signature algorithm")
 		}
@@ -126,7 +130,7 @@ func RequestValidation() gin.HandlerFunc {
 }
 
 // Inspect Publickey before registration
-func InspectPublicKey() gin.HandlerFunc {
+func (sm *SecurityMiddleware) InspectPublicKey() gin.HandlerFunc {
 	return func(ctx *gin.Context) {
 		// Content Type
 		contentType := ctx.GetHeader("Content-Type")
@@ -152,7 +156,7 @@ func InspectPublicKey() gin.HandlerFunc {
 		}
 
 		// Import test
-		pubKeyBlob, err := base64Decode(keyInfo.PublicKey)
+		pubKeyBlob, err := sm.base64Decode(keyInfo.PublicKey)
 		if err != nil {
 			response.SetErrorResponse(ctx, http.StatusBadRequest, response.ErrInvalidKey)
 			ctx.Abort()
@@ -174,8 +178,8 @@ func InspectPublicKey() gin.HandlerFunc {
 */
 
 // Verify message signed with ECDSA Privatekey
-func verifyEcdsaSignature(msg string, sigStr string, pubKeyStr string) error {
-	pubKeyBlob, err := base64Decode(pubKeyStr)
+func (sm *SecurityMiddleware) verifyEcdsaSignature(msg string, sigStr string, pubKeyStr string) error {
+	pubKeyBlob, err := sm.base64Decode(pubKeyStr)
 	if err != nil {
 		return err
 	}
@@ -185,7 +189,7 @@ func verifyEcdsaSignature(msg string, sigStr string, pubKeyStr string) error {
 		return err
 	}
 
-	signature, err := base64Decode(sigStr) 
+	signature, err := sm.base64Decode(sigStr)
 	if err != nil {
 		return err
 	}
@@ -200,8 +204,8 @@ func verifyEcdsaSignature(msg string, sigStr string, pubKeyStr string) error {
 }
 
 // Verify message signed with RSA Privatekey
-func verifyRsaSignature(msg string, sigStr string, pubKeyStr string) error {
-	rsaPubKey, err := parseXML(pubKeyStr)
+func (sm *SecurityMiddleware) verifyRsaSignature(msg string, sigStr string, pubKeyStr string) error {
+	rsaPubKey, err := sm.parseXML(pubKeyStr)
 	if err != nil {
 		return err
 	}
@@ -217,7 +221,7 @@ func verifyRsaSignature(msg string, sigStr string, pubKeyStr string) error {
 }
 
 // decode base64 encoded string
-func base64Decode(str string) ([]byte, error) {
+func (sm *SecurityMiddleware) base64Decode(str string) ([]byte, error) {
 	raw, err := base64.StdEncoding.DecodeString(str)
 	if err != nil {
 		return nil, err
@@ -226,9 +230,9 @@ func base64Decode(str string) ([]byte, error) {
 }
 
 // convert to bigInt value from base64 encoded string
-func convertbigInt(str string) (*big.Int, error) {
+func (sm *SecurityMiddleware) convertbigInt(str string) (*big.Int, error) {
 	bigInt := &big.Int{}
-	rawbyte, err := base64Decode(str)
+	rawbyte, err := sm.base64Decode(str)
 	if err != nil {
 		return nil, err
 	}
@@ -237,17 +241,21 @@ func convertbigInt(str string) (*big.Int, error) {
 }
 
 // map PublicKey XML to rsa.PublicKey struct
-func parseXML(str string) (rsa.PublicKey, error) {
+func (sm *SecurityMiddleware) parseXML(str string) (rsa.PublicKey, error) {
 	rawXML, _ := base64.StdEncoding.DecodeString(str)
 	rsaPublicKey := rsaPublicKey{}
 	if err := xml.Unmarshal([]byte(rawXML), &rsaPublicKey); err != nil {
 		return rsa.PublicKey{}, err
 	}
-	modulus, err := convertbigInt(rsaPublicKey.Modulus)
-	if err != nil { return rsa.PublicKey{}, err }
-	exponent, err := convertbigInt(rsaPublicKey.Exponent)
-	if err != nil { return rsa.PublicKey{}, err }
-	key := rsa.PublicKey {
+	modulus, err := sm.convertbigInt(rsaPublicKey.Modulus)
+	if err != nil {
+		return rsa.PublicKey{}, err
+	}
+	exponent, err := sm.convertbigInt(rsaPublicKey.Exponent)
+	if err != nil {
+		return rsa.PublicKey{}, err
+	}
+	key := rsa.PublicKey{
 		N: modulus,
 		E: int(exponent.Int64()),
 	}
