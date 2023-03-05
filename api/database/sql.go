@@ -17,8 +17,8 @@ import (
 // データベースのマイグレーション -> sql.go
 // DB接続はCLoseせずオブジェクトを保持 -> sql.go
 
-func InitializeDB() *gorm.DB {
-	db := getGormInstance()
+func InitializeDB(mode string) *gorm.DB {
+	db := getGormInstance(mode)
 	MigrateDB(db)
 	return db
 }
@@ -34,13 +34,16 @@ func MigrateDB(db *gorm.DB) {
 	db.AutoMigrate(&model2.ValidClient{})
 }
 
-func getGormInstance() *gorm.DB {
+func getGormInstance(mode string) *gorm.DB {
 	USER := os.Getenv("DB_USER")
 	PASS := os.Getenv("DB_PASSWORD")
 	DBNAME := os.Getenv("DB_NAME")
 	DBADRESS := os.Getenv("DB_ADDRESS")
 	PROTOCOL := "tcp(" + DBADRESS + ")"
-	CONNECT := USER + ":" + PASS + "@" + PROTOCOL + "/" + DBNAME + "?charset=utf8&parseTime=true&tls=true"
+	CONNECT := USER + ":" + PASS + "@" + PROTOCOL + "/" + DBNAME + "?charset=utf8&parseTime=true"
+	if mode == "release" {
+		CONNECT = CONNECT + "&tls=true"
+	}
 	count := 0
 	db, err := gorm.Open(mysql.Open(CONNECT), &gorm.Config{
 		Logger:                                   logger.Default.LogMode(logger.Info),

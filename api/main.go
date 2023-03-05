@@ -9,11 +9,10 @@ import (
 )
 
 func main() {
-	db := database.InitializeDB()
+	mode := os.Getenv("GIN_MODE")
+	db := database.InitializeDB(mode)
 	// アクセストークンの定期的な削除をする
 	// session.StartDeleteExpiredTokens()
-
-	mode := os.Getenv("GIN_MODE")
 
 	// ルーティング設定
 	var router *gin.Engine
@@ -23,7 +22,7 @@ func main() {
 	} else {
 		router = server.GetRouterV2(db)
 	}
-	if mode == "production" {
+	if mode == "release" {
 		log.Println("Running in Production mode.")
 	} else {
 		log.Println("Running in Development mode.")
