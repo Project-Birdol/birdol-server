@@ -1,7 +1,7 @@
 package jsonmodel
 
 import (
-	model2 "github.com/Project-Birdol/birdol-server/model"
+	"github.com/Project-Birdol/birdol-server/model"
 )
 
 type GalleryChild struct {
@@ -19,17 +19,17 @@ type StoryResponse struct {
 }
 
 type HallOfFameResponse struct {
-	Characters []model2.CompletedProgress `json:"characters"`
+	Characters []model.CompletedProgress `json:"characters"`
 }
 
 type CharacterResponse struct {
-	CharacterProgresses []model2.CharacterProgress `json:"character_progresses"`
-	Teachers            []model2.Teacher           `json:"teachers"`
+	CharacterProgresses []model.CharacterProgress `json:"character_progresses"`
+	Teachers            []model.Teacher           `json:"teachers"`
 }
 
 type CharacterProgressRequest struct {
-	CharacterProgresses []model2.CharacterProgress `json:"character_progresses"`
-	Teachers            []model2.CompletedProgress `json:"teachers"`
+	CharacterProgresses []model.CharacterProgress `json:"character_progresses"`
+	Teachers            []model.CompletedProgress `json:"teachers"`
 }
 
 type CreateResponse struct {
