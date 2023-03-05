@@ -16,6 +16,7 @@ import (
 	"github.com/Project-Birdol/birdol-server/model"
 	"gorm.io/gorm"
 	"io"
+	"log"
 	"math/big"
 	"net/http"
 	"os"
@@ -132,6 +133,7 @@ func (sm *SecurityMiddleware) RequestValidation() gin.HandlerFunc {
 // Inspect Publickey before registration
 func (sm *SecurityMiddleware) InspectPublicKey() gin.HandlerFunc {
 	return func(ctx *gin.Context) {
+		log.SetPrefix("[InspectPublicKey]")
 		// Content Type
 		contentType := ctx.GetHeader("Content-Type")
 		if contentType != gin.MIMEJSON {
@@ -156,7 +158,13 @@ func (sm *SecurityMiddleware) InspectPublicKey() gin.HandlerFunc {
 		}
 
 		// Import test
-		pubKeyBlob, err := sm.base64Decode(keyInfo.PublicKey)
+		pubKeyStr, err := sm.base64Decode(keyInfo.PublicKey)
+		if err != nil {
+			response.SetErrorResponse(ctx, http.StatusBadRequest, response.ErrInvalidKey)
+			ctx.Abort()
+			return
+		}
+		pubKeyBlob, err := hex.DecodeString(string(pubKeyStr))
 		if err != nil {
 			response.SetErrorResponse(ctx, http.StatusBadRequest, response.ErrInvalidKey)
 			ctx.Abort()
@@ -169,6 +177,7 @@ func (sm *SecurityMiddleware) InspectPublicKey() gin.HandlerFunc {
 			return
 		}
 
+		log.Println("inspection passed.")
 		ctx.Next()
 	}
 }
@@ -177,9 +186,13 @@ func (sm *SecurityMiddleware) InspectPublicKey() gin.HandlerFunc {
 	Private functions
 */
 
-// Verify message signed with ECDSA Privatekey
 func (sm *SecurityMiddleware) verifyEcdsaSignature(msg string, sigStr string, pubKeyStr string) error {
-	pubKeyBlob, err := sm.base64Decode(pubKeyStr)
+	pubKeyHexStr, err := sm.base64Decode(pubKeyStr)
+	if err != nil {
+		return err
+	}
+
+	pubKeyBlob, err := hex.DecodeString(string(pubKeyHexStr))
 	if err != nil {
 		return err
 	}
@@ -188,15 +201,19 @@ func (sm *SecurityMiddleware) verifyEcdsaSignature(msg string, sigStr string, pu
 	if err != nil {
 		return err
 	}
+	signatureHexStr, err := sm.base64Decode(sigStr)
+	if err != nil {
+		return err
+	}
 
-	signature, err := sm.base64Decode(sigStr)
+	signature, err := hex.DecodeString(string(signatureHexStr))
 	if err != nil {
 		return err
 	}
 
 	hashedMsg := sha512.Sum512([]byte(msg))
 
-	if !ecdsa.VerifyASN1(pubKey.(*ecdsa.PublicKey), hashedMsg[:], signature) {
+	if ecdsa.VerifyASN1(pubKey.(*ecdsa.PublicKey), hashedMsg[:], signature) {
 		return errors.New("invalid signature found")
 	}
 

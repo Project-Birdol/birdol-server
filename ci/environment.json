@@ -1,5 +1,5 @@
 {
-	"id": "073f0a98-3242-45fd-89c9-43313483a160",
+	"id": "4d10181b-ae80-448e-81cd-5b796aa58c27",
 	"name": "birdol-user-A",
 	"values": [
 		{
@@ -76,9 +76,15 @@
 			"key": "TIMESTAMP",
 			"value": "",
 			"enabled": true
+		},
+		{
+			"key": "SIGN_ALGO",
+			"value": "ecdsa",
+			"type": "default",
+			"enabled": true
 		}
 	],
 	"_postman_variable_scope": "environment",
-	"_postman_exported_at": "2021-10-02T08:19:24.225Z",
-	"_postman_exported_using": "Postman/9.0.3"
+	"_postman_exported_at": "2023-03-04T18:24:31.949Z",
+	"_postman_exported_using": "Postman/10.11.1"
 }
