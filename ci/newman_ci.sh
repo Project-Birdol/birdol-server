@@ -55,7 +55,8 @@ echo ">> Passed"
 echo "> Test 3: SetDataLink - DeviceA"
 PASS=$(jq -r '.values | from_entries | .LINK_PASSWORD' < environment.json)
 BODY=$(jq -r '.item[].item[0].item[2].request.body.raw' < collection.json)
-BODY=${BODY//"{{LINK_PASSWORD}}/$PASS"}
+BODY=${BODY//"{{LINK_PASSWORD}}"/"$PASS"}
+echo "$BODY"
 
 TS=$(date '+%Y-%m-%d-%H-%M-%S')
 SIG=$("$TOOL_BIN" sign "v2:$TS:$BODY" ecdsa /tmp/key-a.priv | base64 -w 0)
@@ -91,7 +92,7 @@ echo ">> Passed"
 # Run Test 6: LoginWithToken - DeviceB
 echo "> Test 6: LoginWithToken - DeviceB"
 TS=$(date '+%Y-%m-%d-%H-%M-%S')
-SIG=$("$TOOL_BIN" sign ecdsa "v2:$TS:" /tmp/key-b.priv | base64 -w 0)
+SIG=$("$TOOL_BIN" sign "v2:$TS:" ecdsa /tmp/key-b.priv | base64 -w 0)
 
 newman run collection.json -e environment_tmp.json \
     --folder LoginWithTokenB \
@@ -104,7 +105,7 @@ echo ">> Passed"
 echo "> Test 7: SetDataLink - DeviceB"
 PASS=$(jq -r '.values | from_entries | .LINK_PASSWORD' < environment.json)
 BODY=$(jq -r '.item[].item[1].item[2].request.body.raw' < collection.json)
-BODY=${BODY//"{{LINK_PASSWORD}}/$PASS"}
+BODY=${BODY//"{{LINK_PASSWORD}}"/"$PASS"}
 
 TS=$(date '+%Y-%m-%d-%H-%M-%S')
 SIG=$("$TOOL_BIN" sign "v2:$TS:$BODY" ecdsa /tmp/key-b.priv | base64 -w 0)

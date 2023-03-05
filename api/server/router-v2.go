@@ -34,7 +34,7 @@ func GetRouterV2(db *gorm.DB) *gin.Engine {
 			user.POST("", userController.LinkAccount())
 		}
 
-		auth := v2.Group("/session")
+		auth := v2.Group("/auth")
 		auth.Use(securityMiddleware.RequestValidation())
 		{
 			auth_root := auth.Group("")

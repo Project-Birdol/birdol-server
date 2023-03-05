@@ -5,6 +5,7 @@ go 1.19
 require (
 	github.com/gin-gonic/gin v1.9.0
 	github.com/seehuhn/mt19937 v1.0.0
+	github.com/starkbank/ecdsa-go/v2 v2.0.0
 	golang.org/x/crypto v0.6.0
 	gorm.io/driver/mysql v1.4.7
 	gorm.io/gorm v1.24.6

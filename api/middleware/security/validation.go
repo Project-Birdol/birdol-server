@@ -5,10 +5,8 @@ package middleware
 
 import (
 	"crypto"
-	"crypto/ecdsa"
 	"crypto/rsa"
 	"crypto/sha512"
-	"crypto/x509"
 	"encoding/base64"
 	"encoding/hex"
 	"encoding/xml"
@@ -26,6 +24,9 @@ import (
 	"github.com/Project-Birdol/birdol-server/utils/response"
 	"github.com/gin-gonic/gin"
 	"github.com/gin-gonic/gin/binding"
+	"github.com/starkbank/ecdsa-go/v2/ellipticcurve/ecdsa"
+	"github.com/starkbank/ecdsa-go/v2/ellipticcurve/publickey"
+	"github.com/starkbank/ecdsa-go/v2/ellipticcurve/signature"
 )
 
 // Keytype
@@ -170,12 +171,8 @@ func (sm *SecurityMiddleware) InspectPublicKey() gin.HandlerFunc {
 			ctx.Abort()
 			return
 		}
-		_, err = x509.ParsePKIXPublicKey(pubKeyBlob)
-		if err != nil {
-			response.SetErrorResponse(ctx, http.StatusBadRequest, response.ErrInvalidKey)
-			ctx.Abort()
-			return
-		}
+
+		_ = publickey.FromDer(pubKeyBlob) // panics when invalid key is passed
 
 		log.Println("inspection passed.")
 		ctx.Next()
@@ -197,24 +194,23 @@ func (sm *SecurityMiddleware) verifyEcdsaSignature(msg string, sigStr string, pu
 		return err
 	}
 
-	pubKey, err := x509.ParsePKIXPublicKey(pubKeyBlob)
-	if err != nil {
-		return err
-	}
+	pubkey := publickey.FromDer(pubKeyBlob)
+
 	signatureHexStr, err := sm.base64Decode(sigStr)
 	if err != nil {
 		return err
 	}
 
-	signature, err := hex.DecodeString(string(signatureHexStr))
+	sigbyte, err := hex.DecodeString(string(signatureHexStr))
 	if err != nil {
 		return err
 	}
 
-	hashedMsg := sha512.Sum512([]byte(msg))
+	signature := signature.FromDer(sigbyte)
 
-	if ecdsa.VerifyASN1(pubKey.(*ecdsa.PublicKey), hashedMsg[:], signature) {
-		return errors.New("invalid signature found")
+	verified := ecdsa.Verify(msg, signature, &pubkey)
+	if !verified {
+		return errors.New("invalid signature passed")
 	}
 
 	return nil

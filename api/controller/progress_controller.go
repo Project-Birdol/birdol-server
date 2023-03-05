@@ -22,7 +22,6 @@ func (pc *ProgressController) GetGalleryInfo() gin.HandlerFunc {
 		userid := accessToken.(model.AccessToken).UserID
 		var ids []jsonmodel.GalleryChild
 		if err := pc.DB.Model(&model.CompletedProgress{}).Select("main_character_id").Where("user_id = ?", userid).Group("main_character_id").Order("main_character_id").Find(&ids).Error; err != nil {
-			log.Println(err)
 			res_util.SetErrorResponse(ctx, http.StatusBadRequest, res_util.ErrDataNotFound)
 			return
 		}
@@ -40,7 +39,6 @@ func (pc *ProgressController) GetCompletedCharacters() gin.HandlerFunc {
 		userid := accessToken.(model.AccessToken).UserID
 		var characters []model.CompletedProgress
 		if err := pc.DB.Model(&model.CompletedProgress{}).Where("user_id = ?", userid).Find(&characters).Error; err != nil {
-			log.Println(err)
 			res_util.SetErrorResponse(ctx, http.StatusBadRequest, res_util.ErrDataNotFound)
 			return
 		}
@@ -48,7 +46,6 @@ func (pc *ProgressController) GetCompletedCharacters() gin.HandlerFunc {
 		response := jsonmodel.HallOfFameResponse{
 			Characters: characters,
 		}
-		log.Println(response)
 		res_util.SetStructResponse(ctx, http.StatusOK, res_util.ResultOK, response)
 	}
 }
@@ -60,7 +57,6 @@ func (pc *ProgressController) GetCurrentCharacters() gin.HandlerFunc {
 
 		var story model.StoryProgress
 		if err := pc.DB.Where("user_id = ? && completed = ?", userid, false).Preload("CharacterProgresses").Preload("Teachers").Preload("Teachers.Character").Last(&story).Error; err != nil {
-			log.Println(err)
 			res_util.SetErrorResponse(ctx, http.StatusBadRequest, res_util.ErrDataNotFound)
 			return
 		}
@@ -77,10 +73,8 @@ func (pc *ProgressController) GetCurrentStory() gin.HandlerFunc {
 	return func(ctx *gin.Context) {
 		accessToken, _ := ctx.Get("access_token")
 		userid := accessToken.(model.AccessToken).UserID
-		log.Println(userid)
 		var response jsonmodel.StoryResponse
 		if err := pc.DB.Model(&model.StoryProgress{}).Where("user_id = ? && completed = ?", userid, false).Last(&response).Error; err != nil {
-			log.Println(err)
 			res_util.SetErrorResponse(ctx, http.StatusBadRequest, res_util.ErrDataNotFound)
 			return
 		}
@@ -92,33 +86,29 @@ func (pc *ProgressController) FinishProgress() gin.HandlerFunc {
 	return func(ctx *gin.Context) {
 		accessToken, _ := ctx.Get("access_token")
 		userid := accessToken.(model.AccessToken).UserID
-		user_record := pc.DB.Model(&model.User{}).Where("id = ?", userid)
-		if user_record.RowsAffected != 1 || user_record.Error != nil {
+		var size int64
+		if pc.DB.Model(&model.User{}).Where("id = ?", userid).Count(&size).Error != nil || size != 1 {
 			res_util.SetErrorResponse(ctx, http.StatusInternalServerError, res_util.ErrDataNotFound)
 			return
 		}
 		var story model.StoryProgress
 		if err := pc.DB.Where("user_id = ? && completed = ?", userid, false).Last(&story).Error; err != nil {
-			log.Println(err)
 			res_util.SetErrorResponse(ctx, http.StatusBadRequest, res_util.ErrDataNotFound)
 			return
 		}
 		story.Completed = true
 		err := pc.DB.Transaction(func(tx *gorm.DB) error {
 			if err := pc.DB.Save(&story).Error; err != nil {
-				log.Println(err)
 				return err
 			}
 			var characters []model.CompletedProgress
 			if err := pc.DB.Model(&model.CharacterProgress{}).Select("main_character_id", "name", "visual", "vocal", "dance", "active_skill_level", "support_character_id", "passive_skill_level").Where("story_progress_id = ?", story.ID).Find(&characters).Error; err != nil {
-				log.Println(err)
 				return err
 			}
 			for i := 0; i < 5; i++ {
 				characters[i].UserId = userid
 			}
 			if err := pc.DB.Model(&model.CompletedProgress{}).Create(&characters).Error; err != nil {
-				log.Println(err)
 				return err
 			}
 			return nil
@@ -144,8 +134,8 @@ func (pc *ProgressController) UpdateCharacters() gin.HandlerFunc {
 			return
 		}
 		err := pc.DB.Transaction(func(tx *gorm.DB) error {
-			user_record := tx.Model(&model.User{}).Where("id = ?", userid)
-			if user_record.RowsAffected != 1 || user_record.Error != nil {
+			var size int64
+			if tx.Model(&model.User{}).Where("id = ?", userid).Count(&size).Error != nil || size != 1 {
 				return errors.New("User record not found!")
 			}
 			for _, v := range request.CharacterProgresses {
@@ -174,8 +164,8 @@ func (pc *ProgressController) UpdateMainStory() gin.HandlerFunc {
 			return
 		}
 		err := pc.DB.Transaction(func(tx *gorm.DB) error {
-			user_record := tx.Model(&model.User{}).Where("id = ?", userid)
-			if user_record.RowsAffected != 1 || user_record.Error != nil {
+			var size int64
+			if tx.Model(&model.User{}).Where("id = ?", userid).Count(&size).Error != nil || size != 1 {
 				return errors.New("User record not found!")
 			}
 			return tx.Model(&model.StoryProgress{}).Where("user_id = ? && completed = ?", userid, false).Updates(&request).Error
@@ -202,8 +192,8 @@ func (pc *ProgressController) CreateProgress() gin.HandlerFunc {
 		}
 		story := model.StoryProgress{}
 		err := pc.DB.Transaction(func(tx *gorm.DB) error {
-			user_record := tx.Model(&model.User{}).Where("id = ?", userid)
-			if user_record.RowsAffected != 1 || user_record.Error != nil {
+			var size int64
+			if tx.Model(&model.User{}).Where("id = ?", userid).Count(&size).Error != nil || size != 1 {
 				return errors.New("User record not found!")
 			}
 			var current []model.StoryProgress
