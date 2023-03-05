@@ -1,13 +1,13 @@
 package database
 
 import (
-	"log"
-  	"time"
+	model2 "github.com/Project-Birdol/birdol-server/model"
+	"gorm.io/driver/mysql"
 	"gorm.io/gorm"
 	"gorm.io/gorm/logger"
-	"gorm.io/driver/mysql"
-	"github.com/Project-Birdol/birdol-server/database/model"
+	"log"
 	"os"
+	"time"
 )
 
 /*
@@ -17,60 +17,63 @@ import (
 // データベースのマイグレーション -> sql.go
 // DB接続はCLoseせずオブジェクトを保持 -> sql.go
 
-var Sqldb *gorm.DB
-
-func StartDB(){
-	SqlConnect()
-	MigrateDB()
+func InitializeDB(mode string) *gorm.DB {
+	db := getGormInstance(mode)
+	MigrateDB(db)
+	return db
 }
 
-func MigrateDB(){
-	Sqldb.AutoMigrate(&model.User{})
-	Sqldb.AutoMigrate(&model.AccessToken{})
-	Sqldb.AutoMigrate(&model.Session{})
-	Sqldb.AutoMigrate(&model.StoryProgress{})
-	Sqldb.AutoMigrate(&model.CharacterProgress{})
-	Sqldb.AutoMigrate(&model.Teacher{})
-	Sqldb.AutoMigrate(&model.CompletedProgress{})
-	Sqldb.AutoMigrate(&model.ValidClient{})
+func MigrateDB(db *gorm.DB) {
+	db.AutoMigrate(&model2.User{})
+	db.AutoMigrate(&model2.AccessToken{})
+	db.AutoMigrate(&model2.Session{})
+	db.AutoMigrate(&model2.StoryProgress{})
+	db.AutoMigrate(&model2.CharacterProgress{})
+	db.AutoMigrate(&model2.Teacher{})
+	db.AutoMigrate(&model2.CompletedProgress{})
+	db.AutoMigrate(&model2.ValidClient{})
 }
 
-func SqlConnect() {
+func getGormInstance(mode string) *gorm.DB {
 	USER := os.Getenv("DB_USER")
 	PASS := os.Getenv("DB_PASSWORD")
 	DBNAME := os.Getenv("DB_NAME")
 	DBADRESS := os.Getenv("DB_ADDRESS")
-	PROTOCOL := "tcp(" + DBADRESS + ":3306)"
+	PROTOCOL := "tcp(" + DBADRESS + ")"
 	CONNECT := USER + ":" + PASS + "@" + PROTOCOL + "/" + DBNAME + "?charset=utf8&parseTime=true"
+	if mode == "release" {
+		CONNECT = CONNECT + "&tls=true"
+	}
 	count := 0
 	db, err := gorm.Open(mysql.Open(CONNECT), &gorm.Config{
-		Logger: logger.Default.LogMode(logger.Info),
+		Logger:                                   logger.Default.LogMode(logger.Info),
+		DisableForeignKeyConstraintWhenMigrating: true,
 	})
 	if err != nil {
-	  for {
-		log.Print(err)
-		log.Print(CONNECT) 
-		if err == nil {
-		  log.Println("")
-		  break
+		for {
+			log.Print(err)
+			log.Print(CONNECT)
+			if err == nil {
+				log.Println("")
+				break
+			}
+			log.Print(".")
+			time.Sleep(time.Second)
+			count++
+			if count > 180 {
+				log.Println("DB Connection Error")
+				panic(err)
+			}
+			db, err = gorm.Open(mysql.Open(CONNECT), &gorm.Config{
+				Logger: logger.Default.LogMode(logger.Info),
+			})
 		}
-		log.Print(".")
-		time.Sleep(time.Second)
-		count++
-		if count > 180 {
-		log.Println("DB Connection Error")
-		  panic(err)
-		}
-		db, err = gorm.Open(mysql.Open(CONNECT), &gorm.Config{
-			Logger: logger.Default.LogMode(logger.Info),
-		})
-	  }
 	}
 	log.Println("DB Connected")
-	Sqldb = db
+	return db
 }
 
-func TestingDatabase() {
+func InitilaizeTestingDB() *gorm.DB {
 	USER := os.Getenv("DB_USER")
 	PASS := os.Getenv("DB_PASSWORD")
 	DBNAME := os.Getenv("DB_NAME")
@@ -81,9 +84,9 @@ func TestingDatabase() {
 		Logger: logger.Default.LogMode(logger.Silent),
 	})
 	if err != nil {
-	  panic(err)
+		panic(err)
 	}
 	log.Println("DB Connected")
-	Sqldb = db
-	MigrateDB()
+	MigrateDB(db)
+	return db
 }

@@ -1,8 +1,8 @@
-package auth
+package hash
 
 import "golang.org/x/crypto/bcrypt"
 
-//HashString string(パスワードなど)をハッシュ化する。
+// HashString string(パスワードなど)をハッシュ化する。
 func HashString(s *string) error {
 	bytes := []byte(*s)
 
@@ -13,7 +13,7 @@ func HashString(s *string) error {
 	return err
 }
 
-//CompareHashedString ハッシュ済stringと未ハッシュstringを比較し、一致した場合nilを返す。
+// CompareHashedString ハッシュ済stringと未ハッシュstringを比較し、一致した場合nilを返す。
 func CompareHashedString(hashedPass string, rawPass string) error {
 	return bcrypt.CompareHashAndPassword([]byte(hashedPass), []byte(rawPass))
 }

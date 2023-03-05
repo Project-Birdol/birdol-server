@@ -1,45 +1,47 @@
 package jsonmodel
 
-import "github.com/Project-Birdol/birdol-server/database/model"
+import (
+	"github.com/Project-Birdol/birdol-server/model"
+)
 
 type GalleryChild struct {
 	MainCharacterId int `json:"id" binding:"required"`
 }
 
 type GalleryResponse struct {
-	Birdols []GalleryChild `json:"birdols"` 
+	Birdols []GalleryChild `json:"birdols"`
 }
 
-type StoryResponse struct{
-	ID uint `gorm:"primarykey" json:"id"` 
-	MainStoryId string	`json:"main_story_id"`
-	LessonCount uint	`json:"lesson_count"`
+type StoryResponse struct {
+	ID          uint   `gorm:"primarykey" json:"id"`
+	MainStoryId string `json:"main_story_id"`
+	LessonCount uint   `json:"lesson_count"`
 }
 
-type HallOfFameResponse struct{
-	Characters []model.CompletedProgress `json:"characters"` 
+type HallOfFameResponse struct {
+	Characters []model.CompletedProgress `json:"characters"`
 }
 
-type CharacterResponse struct{
+type CharacterResponse struct {
 	CharacterProgresses []model.CharacterProgress `json:"character_progresses"`
-	Teachers []model.Teacher `json:"teachers"`
+	Teachers            []model.Teacher           `json:"teachers"`
 }
 
-type CharacterProgressRequest struct{
+type CharacterProgressRequest struct {
 	CharacterProgresses []model.CharacterProgress `json:"character_progresses"`
-	Teachers []model.CompletedProgress `json:"teachers"`
+	Teachers            []model.CompletedProgress `json:"teachers"`
 }
 
 type CreateResponse struct {
-	ProgressId uint	`json:"progress_id"`
+	ProgressId uint                   `json:"progress_id"`
 	Characters []CreateCharacterChild `json:"characters"`
-	Teachers []CreateTeacherChild `json:"teachers"`  
+	Teachers   []CreateTeacherChild   `json:"teachers"`
 }
 
-type CreateCharacterChild struct{
+type CreateCharacterChild struct {
 	ChracterId uint `json:"character_id"`
 }
 
-type CreateTeacherChild struct{
+type CreateTeacherChild struct {
 	TeacherId uint `json:"teacher_id"`
 }

@@ -9,7 +9,7 @@ services:
       GIN_MODE: debug 
       DB_USER: ${MYSQL_USER}
       DB_PASSWORD: ${MYSQL_PASSWORD}
-      DB_ADDRESS: db
+      DB_ADDRESS: db:3306
       DB_NAME: ${MYSQL_DATABASE}
       API_VERSION: v2
       TZ: 'Asia/Tokyo'

@@ -1,19 +1,23 @@
 package controller
 
 import (
+	"github.com/Project-Birdol/birdol-server/model"
+	"gorm.io/gorm"
 	"log"
 	"net/http"
 	"strconv"
 	"strings"
 
 	"github.com/Project-Birdol/birdol-server/controller/jsonmodel"
-	"github.com/Project-Birdol/birdol-server/database"
-	"github.com/Project-Birdol/birdol-server/database/model"
 	"github.com/Project-Birdol/birdol-server/utils/response"
 	"github.com/gin-gonic/gin"
 )
 
-func ClientVerCheck() gin.HandlerFunc {
+type VersionController struct {
+	DB *gorm.DB
+}
+
+func (vc *VersionController) ClientVerCheck() gin.HandlerFunc {
 	return func(ctx *gin.Context) {
 		log.SetPrefix("[ClientCheck] ")
 		content_type := ctx.GetHeader("Content-Type")
@@ -39,7 +43,7 @@ func ClientVerCheck() gin.HandlerFunc {
 		}
 
 		var validCli model.ValidClient
-		if err := database.Sqldb.Where("platform = ?", platform).First(&validCli).Error; err != nil {
+		if err := vc.DB.Where("platform = ?", platform).First(&validCli).Error; err != nil {
 			response.SetErrorResponse(ctx, http.StatusForbidden, response.ErrInvalidPlatform)
 			return
 		}
@@ -47,12 +51,12 @@ func ClientVerCheck() gin.HandlerFunc {
 		system_ver, _ := strconv.Atoi(version[0])
 		major_ver, _ := strconv.Atoi(version[1])
 		minor_ver, _ := strconv.Atoi(version[2])
-		if (validCli.SystemVersion != uint(system_ver) || validCli.MajorVersion != uint(major_ver) || validCli.MinorVersion != uint(minor_ver)) {
+		if validCli.SystemVersion != uint(system_ver) || validCli.MajorVersion != uint(major_ver) || validCli.MinorVersion != uint(minor_ver) {
 			response.SetErrorResponse(ctx, http.StatusForbidden, response.ErrUpdateRequired)
 			return
 		}
 
-		if (validCli.Build != build_id) {
+		if validCli.Build != build_id {
 			response.SetErrorResponse(ctx, http.StatusForbidden, response.ErrUpdateRequired)
 			return
 		}
